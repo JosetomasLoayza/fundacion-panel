@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Panel — Persona 1</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f0f13;--surf:#17171f;--surf2:#1e1e2a;--surf3:#252535;
+  --border:#2a2a3a;--border2:#3a3a50;
+  --text:#e8e4dd;--muted:#7a7a8c;
+  --accent:#c8a97e;--green:#3aaa6e;--red:#e05252;--warn:#d4a017;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:16px;}
+#loader h2{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--accent);}
+#loader p{color:var(--muted);font-size:13px;}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.app{max-width:800px;margin:0 auto;padding:24px 16px 80px;}
+.hdr{margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.hdr-top{display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.avatar{width:48px;height:48px;border-radius:50%;background:#c8a97e22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0;}
+.hdr h1{font-family:'Playfair Display',serif;font-size:1.7rem;color:var(--accent);}
+.hdr p{color:var(--muted);font-size:12px;margin-top:2px;}
+.my-badge{display:inline-flex;align-items:center;gap:5px;background:#c8a97e15;border:1px solid var(--accent);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--accent);margin-top:6px;}
+.my-badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;}
+#syncStatus{font-size:12px;color:var(--muted);margin-bottom:16px;min-height:18px;transition:color .3s;}
+#syncStatus.saved{color:var(--green);}
+#syncStatus.saving{color:var(--warn);}
+#syncStatus.error{color:var(--red);}
+
+.stabs{display:flex;gap:3px;margin-bottom:18px;background:var(--surf);border-radius:10px;padding:4px;border:1px solid var(--border);flex-wrap:wrap;}
+.stab{padding:7px 13px;border-radius:7px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap;}
+.stab:hover{color:var(--text);}
+.stab.active{background:var(--surf2);color:var(--text);border:1px solid var(--border2);}
+
+.card{background:var(--surf);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);margin-bottom:14px;font-weight:500;display:flex;align-items:center;justify-content:space-between;}
+.card-title b{font-weight:500;color:var(--text);font-size:12px;text-transform:none;letter-spacing:0;}
+
+/* READ-ONLY INFO */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.info-row:last-child{border-bottom:none;}
+.info-row .lbl{color:var(--muted);font-size:12px;}
+
+/* CC VIEW */
+.cc-view{background:var(--surf2);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.cc-view-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.cc-view-name{font-weight:500;font-size:13px;}
+.cc-view-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.chevron{font-size:11px;color:var(--muted);transition:transform .2s;}
+.chevron.open{transform:rotate(180deg);}
+.cc-view-body{display:none;border-top:1px solid var(--border);padding:14px;}
+.cc-view-body.open{display:block;}
+.bbar-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.bbar-track{height:8px;background:var(--surf);border-radius:4px;overflow:hidden;border:1px solid var(--border);}
+.bbar-fill{height:100%;border-radius:4px;transition:width .4s;}
+.bbar-stats{display:flex;justify-content:space-between;font-size:12px;margin-top:6px;font-weight:500;}
+.items-view{margin-top:12px;}
+.item-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.item-row:last-child{border-bottom:none;}
+.item-name{color:var(--text);}
+.item-amount{color:var(--muted);font-size:12px;}
+.pct-pill{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;}
+
+/* METAS - editable avance */
+.meta-card{background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.meta-name{font-weight:500;font-size:13px;margin-bottom:8px;}
+.meta-progress-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.meta-label{font-size:12px;color:var(--muted);min-width:36px;}
+.meta-value{font-size:13px;font-weight:500;}
+.meta-edit-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.meta-edit-row label{font-size:12px;color:var(--muted);white-space:nowrap;}
+input[type=number].fi-sm{background:var(--surf3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:120px;transition:border-color .2s;}
+input[type=number].fi-sm:focus{border-color:var(--border2);}
+.pbar-wrap{height:6px;background:var(--surf);border-radius:3px;overflow:hidden;margin-top:6px;}
+.pbar{height:100%;border-radius:3px;transition:width .4s;}
+.pct-lbl{font-size:11px;color:var(--muted);text-align:right;margin-top:3px;}
+
+.periods{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;}
+.period-btn{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--surf2);color:var(--muted);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.period-btn.active{border-color:var(--accent);color:var(--accent);}
+
+/* SUMMARY */
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.sum-stat{background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.sum-val{font-family:'Playfair Display',serif;font-size:20px;color:var(--accent);}
+.sum-lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.8px;}
+
+.save-row{display:flex;align-items:center;gap:10px;margin-top:18px;}
+.save-btn{background:linear-gradient(135deg,#c8a97e,#a87a50);border:none;border-radius:9px;padding:9px 20px;color:#0f0f13;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;font-size:13px;transition:opacity .2s;}
+.save-btn:hover{opacity:.85;}
+
+.note-box{background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;min-height:80px;}
+.note-empty{color:var(--muted);font-style:italic;}
+
+.mbars{display:flex;gap:5px;align-items:flex-end;height:60px;}
+.mbar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.mbar-fill{width:100%;border-radius:3px 3px 0 0;transition:height .4s;min-height:2px;}
+.mbar-lbl{font-size:10px;color:var(--muted);}
+
+/* CHECKLIST */
+.checklist-section{margin-top:20px;padding-top:18px;border-top:1px solid var(--border);}
+.checklist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.checklist-title{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:500;}
+.checklist-counter{font-size:11px;color:var(--muted);}
+.checklist-counter span{color:var(--green);font-weight:500;}
+.task-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.task-item:last-child{border-bottom:none;}
+.task-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.task-check.done{background:var(--green);border-color:var(--green);}
+.task-check.done::after{content:'✓';font-size:12px;color:#0f0f13;font-weight:700;}
+.task-name{flex:1;font-size:13px;}
+.task-name.done{color:var(--muted);text-decoration:line-through;}
+.task-empty{font-size:13px;color:var(--muted);font-style:italic;padding:8px 0;}
+
+@media(max-width:500px){.sum-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spinner"></div>
+  <h2>Cargando tu panel</h2>
+  <p>Conectando...</p>
+</div>
+
+<div class="app" style="display:none" id="appContainer">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="avatar" id="myAvatar">P1</div>
+      <div>
+        <h1 id="myName">Mi Panel</h1>
+        <p id="myRole">Cargo / Área</p>
+      </div>
+    </div>
+    <div class="my-badge">Vista personal · Solo tus datos</div>
+  </div>
+
+  <div id="syncStatus">Conectando...</div>
+
+  <div class="stabs" id="mainTabs"></div>
+  <div id="mainContent"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="shared.js"></script>
+<script>
+const PI = 0; // ← PERSONA INDEX: 0 = Persona 1, 1 = Persona 2
+let db, data = defaultPersona(PI);
+let activeSection=0, activeMonth=0, activeQuarter=0;
+const expandedCC={};
+let saveTimer=null;
+
+function initFirebase(){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    db.ref(`personas/${PI}`).on('value', snap=>{
+      const d = snap.val();
+      if(d){
+        data = {...defaultPersona(PI), ...d};
+        if(!data.metasMensuales) data.metasMensuales={};
+        if(!data.metasTrimestrales) data.metasTrimestrales={};
+        if(!data.centrosCosto) data.centrosCosto=[];
+        data.centrosCosto.forEach(cc=>{ if(!cc.items) cc.items=[]; });
+      }
+      hideLoader(); render();
+    });
+    setStatus('Conectado','saved');
+  } catch(e){
+    setStatus('Error de conexión','error');
+    hideLoader(); render();
+  }
+}
+
+function hideLoader(){
+  document.getElementById('loader').style.display='none';
+  document.getElementById('appContainer').style.display='block';
+}
+function setStatus(msg,cls){ const el=document.getElementById('syncStatus'); el.textContent=msg; el.className=cls||''; }
+
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  setStatus('Guardando...','saving');
+  saveTimer=setTimeout(()=>{
+    if(!db){ setStatus('Sin conexión','error'); return; }
+    db.ref(`personas/${PI}`).set(data)
+      .then(()=>setStatus('✓ Guardado · '+new Date().toLocaleTimeString('es-CL'),'saved'))
+      .catch(()=>setStatus('Error al guardar','error'));
+  },800);
+}
+
+function updateActual(type,sk,mi,v){
+  let ref;
+  if(type==='annual') ref=data.metasAnuales;
+  else if(type==='monthly'){ if(!data.metasMensuales[sk]) data.metasMensuales[sk]=[]; ref=data.metasMensuales[sk]; }
+  else{ if(!data.metasTrimestrales[sk]) data.metasTrimestrales[sk]=[]; ref=data.metasTrimestrales[sk]; }
+  if(ref&&ref[mi]) ref[mi].actual=v;
+  scheduleSave(); render();
+}
+
+function toggleCC(ci){ expandedCC[ci]=!expandedCC[ci]; render(); }
+function setMonth(mi){ activeMonth=mi; if(!data.metasMensuales[mi]) data.metasMensuales[mi]=[]; render(); }
+function setQuarter(qi){ activeQuarter=qi; if(!data.metasTrimestrales[qi]) data.metasTrimestrales[qi]=[]; render(); }
+function setSection(si){ activeSection=si; render(); }
+
+// ── CHECKLIST ──
+function getTareasRef(mk){
+  if(!data.tareasMensuales) data.tareasMensuales={};
+  if(!data.tareasMensuales[mk]) data.tareasMensuales[mk]=[];
+  return data.tareasMensuales[mk];
+}
+function toggleTarea(mk,ti){
+  const ref=getTareasRef(mk);
+  ref[ti].done=!ref[ti].done;
+  scheduleSave(); render();
+}
+function addTarea(mk){
+  const inp=document.getElementById(`newTarea_${mk}`);
+  if(!inp||!inp.value.trim()) return;
+  getTareasRef(mk).push({name:inp.value.trim(),done:false});
+  inp.value=''; scheduleSave(); render();
+}
+function renderChecklist(mk){
+  const tareas=getTareasRef(mk);
+  const done=tareas.filter(t=>t.done).length;
+  const rows=tareas.length
+    ? tareas.map((t,ti)=>`
+      <div class="task-item">
+        <div class="task-check ${t.done?'done':''}" onclick="toggleTarea(${mk},${ti})"></div>
+        <span class="task-name ${t.done?'done':''}">${escH(t.name)}</span>
+      </div>`).join('')
+    : '<div class="task-empty">No hay tareas para este mes.</div>';
+  return `<div class="checklist-section">
+    <div class="checklist-header">
+      <span class="checklist-title">Tareas del mes</span>
+      <span class="checklist-counter"><span>${done}</span> / ${tareas.length} completadas</span>
+    </div>
+    ${rows}
+    <div style="display:flex;gap:6px;margin-top:12px">
+      <input type="text" style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none" id="newTarea_${mk}" placeholder="Nueva tarea...">
+      <button onclick="addTarea(${mk})" style="background:var(--surf2);border:1px solid var(--border2);border-radius:8px;padding:7px 13px;color:var(--text);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;white-space:nowrap">+ Tarea</button>
+    </div>
+  </div>`;
+}
+
+function renderCCView(cc,ci){
+  const s=calcCC(cc); const over=s.avail<0; const isOpen=!!expandedCC[ci];
+  const bc=over?'var(--red)':s.p>=70?'var(--warn)':'var(--green)';
+  const items=(cc.items||[]).map(it=>{
+    const m=parseFloat(it.monto)||0;
+    const ip=s.presup>0?Math.min(100,Math.round((m/s.presup)*100)):0;
+    const pc=ip>50?'#e0525222':ip>25?'#d4a01722':'#3aaa6e22';
+    const tc=ip>50?'var(--red)':ip>25?'var(--warn)':'var(--green)';
+    return `<div class="item-row">
+      <span class="item-name">${escH(it.name||'—')}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span class="item-amount">$${fmt(it.monto)}</span>
+        <span class="pct-pill" style="background:${pc};color:${tc}">${ip}%</span>
+      </span>
+    </div>`;
+  }).join('');
+  return `<div class="cc-view">
+    <div class="cc-view-header" onclick="toggleCC(${ci})">
+      <div>
+        <div class="cc-view-name">${escH(cc.name)}</div>
+        <div class="cc-view-sub">${cc.presupuesto?`$${fmt(s.presup)} · Usado $${fmt(s.used)}`:'Sin presupuesto asignado'}</div>
+      </div>
+      <span class="chevron ${isOpen?'open':''}">▾</span>
+    </div>
+    <div class="cc-view-body ${isOpen?'open':''}">
+      ${cc.presupuesto?`
+      <div class="bbar-row"><span>Uso del presupuesto</span><span>${s.p}%</span></div>
+      <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(100,s.p)}%;background:${bc}"></div></div>
+      <div class="bbar-stats">
+        <span style="color:var(--red)">Usado: $${fmt(s.used)}</span>
+        <span style="color:${over?'var(--red)':'var(--green)'}">${over?'Excedido':'Disponible'}: $${fmt(Math.abs(s.avail))}</span>
+      </div>`:''}
+      ${(cc.items||[]).length?`<div class="items-view">${items}</div>`:'<p style="font-size:12px;color:var(--muted);margin-top:8px">Sin ítems registrados</p>'}
+    </div>
+  </div>`;
+}
+
+function renderMeta(m,mi,type,sk){
+  const p=pct(parseFloat(m.actual)||0,parseFloat(m.meta)||0);
+  const bc=p>=90?'var(--red)':p>=60?'var(--warn)':'var(--green)';
+  return `<div class="meta-card">
+    <div class="meta-name">${escH(m.name)||'Meta sin nombre'}</div>
+    <div class="meta-progress-row">
+      <span class="meta-label">Meta:</span><span class="meta-value">${fmt(m.meta)} ${escH(m.unit||'')}</span>
+      <span class="meta-label" style="margin-left:14px">Real:</span><span class="meta-value" style="color:${bc}">${fmt(m.actual)} ${escH(m.unit||'')}</span>
+    </div>
+    <div class="pbar-wrap"><div class="pbar" style="width:${p}%;background:${bc}"></div></div>
+    <div class="pct-lbl">${p}% logrado</div>
+    <div class="meta-edit-row">
+      <label>Actualizar avance:</label>
+      <input type="number" class="fi-sm" value="${m.actual||''}" placeholder="Valor real actual"
+        onchange="updateActual('${type}',${sk},${mi},this.value)">
+      <span style="font-size:12px;color:var(--muted)">${escH(m.unit||'')}</span>
+    </div>
+  </div>`;
+}
+
+function calcSummaryLocal(metas){
+  if(!metas||!metas.length) return {total:0,pct:0,logradas:0};
+  const tm=metas.reduce((s,m)=>s+(parseFloat(m.meta)||0),0);
+  const ta=metas.reduce((s,m)=>s+(parseFloat(m.actual)||0),0);
+  const p=tm>0?Math.min(100,Math.round((ta/tm)*100)):0;
+  return {total:metas.length,pct:p,logradas:metas.filter(m=>(parseFloat(m.actual)||0)>=(parseFloat(m.meta)||1)).length};
+}
+
+function render(){
+  // Update header
+  document.getElementById('myAvatar').textContent=initials(data.name||`P${PI+1}`);
+  document.getElementById('myName').textContent=data.name||`Persona ${PI+1}`;
+  document.getElementById('myRole').textContent=data.role||'Cargo / Área';
+
+  const sections=['Mis Centros de Costo','Metas Anuales','Metas Mensuales','Metas Trimestrales','Mi Avance','Notas'];
+  const stabs=sections.map((s,si)=>`<button class="stab ${activeSection===si?'active':''}" onclick="setSection(${si})">${s}</button>`).join('');
+  document.getElementById('mainTabs').innerHTML=stabs;
+
+  let html='';
+
+  if(activeSection===0){
+    const ccs=(data.centrosCosto||[]);
+    html=`<div class="card"><div class="card-title">Centros de costo <b>${ccs.length}</b></div>
+      ${ccs.length?ccs.map((cc,ci)=>renderCCView(cc,ci)).join(''):'<p style="font-size:13px;color:var(--muted)">No hay centros de costo asignados aún.</p>'}
+    </div>`;
+  } else if(activeSection===1){
+    const metas=data.metasAnuales||[];
+    html=`<div class="card"><div class="card-title">Metas anuales <b>${metas.length} metas</b></div>
+      ${metas.length?metas.map((m,mi)=>renderMeta(m,mi,'annual','null')).join(''):'<p style="font-size:13px;color:var(--muted)">No hay metas anuales registradas.</p>'}
+    </div>`;
+  } else if(activeSection===2){
+    const am=activeMonth; const metas=data.metasMensuales[am]||[];
+    const btns=MONTHS_S.map((m,mi)=>`<button class="period-btn ${am===mi?'active':''}" onclick="setMonth(${mi})">${m}</button>`).join('');
+    html=`<div class="card"><div class="card-title">Metas mensuales</div>
+      <div class="periods">${btns}</div>
+      ${metas.length?metas.map((m,mi)=>renderMeta(m,mi,'monthly',am)).join(''):'<p style="font-size:13px;color:var(--muted);margin-bottom:8px">No hay metas numéricas para '+MONTHS[am]+'.</p>'}
+      ${renderChecklist(am)}
+    </div>`;
+  } else if(activeSection===3){
+    const aq=activeQuarter; const metas=data.metasTrimestrales[aq]||[];
+    const btns=QUARTERS.map((q,qi)=>`<button class="period-btn ${aq===qi?'active':''}" onclick="setQuarter(${qi})">${q}</button>`).join('');
+    html=`<div class="card"><div class="card-title">Metas trimestrales</div>
+      <div class="periods">${btns}</div>
+      ${metas.length?metas.map((m,mi)=>renderMeta(m,mi,'quarterly',aq)).join(''):'<p style="font-size:13px;color:var(--muted)">No hay metas para '+QUARTERS[aq]+'.</p>'}
+    </div>`;
+  } else if(activeSection===4){
+    const allM=Object.values(data.metasMensuales).flat();
+    const allQ=Object.values(data.metasTrimestrales).flat();
+    const sumAll=calcSummaryLocal([...data.metasAnuales,...allM,...allQ]);
+    const tp=data.centrosCosto.reduce((s,cc)=>s+(parseFloat(cc.presupuesto)||0),0);
+    const tu=data.centrosCosto.reduce((s,cc)=>s+(cc.items||[]).reduce((ss,it)=>ss+(parseFloat(it.monto)||0),0),0);
+    const tpct2=pct(tu,tp); const over=tu>tp;
+    const bars=MONTHS_S.map((m,mi)=>{
+      const mm=data.metasMensuales[mi]||[]; const p2=calcSummaryLocal(mm).pct;
+      const h=Math.max(3,Math.round(p2*.5));
+      return `<div class="mbar-col"><div class="mbar-fill" style="height:${h}px;background:${p2>=80?'var(--green)':p2>=40?'var(--warn)':'var(--border2)'}"></div><span class="mbar-lbl">${m[0]}</span></div>`;
+    }).join('');
+    html=`
+    <div class="card"><div class="card-title">Resumen de metas</div>
+      <div class="sum-grid">
+        <div class="sum-stat"><div class="sum-val">${sumAll.pct}%</div><div class="sum-lbl">Avance</div></div>
+        <div class="sum-stat"><div class="sum-val">${sumAll.logradas}</div><div class="sum-lbl">Logradas</div></div>
+        <div class="sum-stat"><div class="sum-val">${sumAll.total}</div><div class="sum-lbl">Total</div></div>
+      </div>
+      <div class="card-title" style="margin-top:8px">Avance mensual</div>
+      <div class="mbars">${bars}</div>
+    </div>
+    ${tp?`<div class="card"><div class="card-title">Mi presupuesto</div>
+      <div class="sum-grid">
+        <div class="sum-stat"><div class="sum-val" style="font-size:16px">$${fmt(tp)}</div><div class="sum-lbl">Total</div></div>
+        <div class="sum-stat"><div class="sum-val" style="font-size:16px;color:var(--red)">$${fmt(tu)}</div><div class="sum-lbl">Usado</div></div>
+        <div class="sum-stat"><div class="sum-val" style="font-size:16px;color:${over?'var(--red)':'var(--green)'}">$${fmt(Math.abs(tp-tu))}</div><div class="sum-lbl">${over?'Excedido':'Disponible'}</div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px"><span>Uso total</span><span>${tpct2}%</span></div>
+      <div class="bbar-track" style="height:9px"><div class="bbar-fill" style="width:${Math.min(100,tpct2)}%;background:${over?'var(--red)':tpct2>=70?'var(--warn)':'var(--green)'}"></div></div>
+    </div>`:''}`;
+  } else if(activeSection===5){
+    const n=data.notas||'';
+    html=`<div class="card"><div class="card-title">Notas del editor</div>
+      ${n?`<div class="note-box">${escH(n)}</div>`:'<div class="note-box note-empty">No hay notas aún.</div>'}
+    </div>`;
+  }
+
+  document.getElementById('mainContent').innerHTML=html;
+}
+
+document.addEventListener('DOMContentLoaded', initFirebase);
+</script>
+</body>
+</html>
