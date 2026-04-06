@@ -216,23 +216,119 @@ let saveTimer=null;
 
 function initFirebase(){
   try{
-    firebase.initializeApp(FIREBASE_CONFIG);
+    if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG no definido');
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    } else {
+      firebase.app();
+    }
+
     db = firebase.database();
-    db.ref(`personas/${PI}`).on('value', snap=>{
+
+    const ref = db.ref(`personas/${PI}`);
+
+    ref.on('value', (snap) => {
       const d = snap.val();
-      if(d){
-        data = {...defaultPersona(PI), ...d};
-        if(!data.metasMensuales) data.metasMensuales={};
-        if(!data.metasTrimestrales) data.metasTrimestrales={};
-        if(!data.centrosCosto) data.centrosCosto=[];
-        data.centrosCosto.forEach(cc=>{ if(!cc.items) cc.items=[]; });
-      }
-      hideLoader(); render();
+      data = { ...defaultPersona(PI), ...(d || {}) };
+
+      if(!data.metasMensuales) data.metasMensuales = {};
+      if(!data.metasTrimestrales) data.metasTrimestrales = {};
+      if(!data.centrosCosto) data.centrosCosto = [];
+      if(!data.rendiciones) data.rendiciones = [];
+
+      data.centrosCosto.forEach(cc => {
+        if(!cc.items) cc.items = [];
+        if(!cc.categorias) cc.categorias = [];
+        cc.categorias.forEach(cat => {
+          if(!cat.gastos) cat.gastos = [];
+        });
+      });
+
+      hideLoader();
+      render();
+      setStatus('Conectado','saved');
+    }, (err) => {
+      console.error('Firebase read error:', err);
+      setStatus('Error de conexión','error');
+      hideLoader();
+      render();
     });
-    setStatus('Conectado','saved');
+
+    setTimeout(() => {
+      const loader = document.getElementById('loader');
+      if (loader && loader.style.display !== 'none') {
+        console.warn('Firebase timeout en personas/' + PI);
+        setStatus('Sin respuesta de Firebase','error');
+        hideLoader();
+        render();
+      }
+    }, 7000);
   } catch(e){
+    console.error('Firebase init error:', e);
     setStatus('Error de conexión','error');
-    hideLoader(); render();
+    hideLoader();
+    render();
+  }
+}
+function initFirebase(){
+  try{
+    if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG no definido');
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    } else {
+      firebase.app();
+    }
+
+    db = firebase.database();
+
+    const ref = db.ref(`personas/${PI}`);
+
+    ref.on('value', (snap) => {
+      const d = snap.val();
+      data = { ...defaultPersona(PI), ...(d || {}) };
+
+      if(!data.metasMensuales) data.metasMensuales = {};
+      if(!data.metasTrimestrales) data.metasTrimestrales = {};
+      if(!data.centrosCosto) data.centrosCosto = [];
+      if(!data.rendiciones) data.rendiciones = [];
+
+      data.centrosCosto.forEach(cc => {
+        if(!cc.items) cc.items = [];
+        if(!cc.categorias) cc.categorias = [];
+        cc.categorias.forEach(cat => {
+          if(!cat.gastos) cat.gastos = [];
+        });
+      });
+
+      hideLoader();
+      render();
+      setStatus('Conectado','saved');
+    }, (err) => {
+      console.error('Firebase read error:', err);
+      setStatus('Error de conexión','error');
+      hideLoader();
+      render();
+    });
+
+    setTimeout(() => {
+      const loader = document.getElementById('loader');
+      if (loader && loader.style.display !== 'none') {
+        console.warn('Firebase timeout en personas/' + PI);
+        setStatus('Sin respuesta de Firebase','error');
+        hideLoader();
+        render();
+      }
+    }, 7000);
+  } catch(e){
+    console.error('Firebase init error:', e);
+    setStatus('Error de conexión','error');
+    hideLoader();
+    render();
+  }
+}
+
   }
 }
 
