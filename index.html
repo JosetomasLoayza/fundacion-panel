@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Editor Fundación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eae6dd;
+      --surf: #f5f2ec;
+      --surf2: #ffffff;
+      --surf3: #f0ece4;
+      --border: #d4cfc6;
+      --border2: #b8b2a8;
+      --text: #1a1a1a;
+      --muted: #6b6660;
+      --gold: #7ecdc4;
+      --blue: #5ba3c9;
+      --green: #3aaa6e;
+      --red: #e05252;
+      --warn: #c8860a;
+      --shadow: 0 8px 24px rgba(0,0,0,.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+    .loader {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; background: var(--bg); z-index: 20;
+    }
+    .spinner {
+      width: 34px; height: 34px; border: 3px solid var(--border2); border-top-color: var(--gold); border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .app { max-width: 1100px; margin: 0 auto; padding: 24px 16px 72px; display:none; }
+    .hdr {
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+      border-bottom: 1px solid var(--border); padding-bottom: 18px; margin-bottom: 24px;
+    }
+    .hdr h1 { font-family: 'Playfair Display', serif; color: #3a9e96; font-size: 2rem; }
+    .hdr p { color: var(--muted); margin-top: 4px; }
+    .badge {
+      border: 1px solid var(--gold); background: rgba(126,205,196,.18); color: #2a7f78;
+      padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    }
+    #syncStatus { color: var(--muted); font-size: 12px; margin-bottom: 14px; min-height: 18px; }
+    #syncStatus.saving { color: var(--warn); }
+    #syncStatus.saved { color: var(--green); }
+    #syncStatus.error { color: var(--red); }
+    .fb-note {
+      display: none; background: var(--surf2); border: 1px solid var(--border2); border-radius: 12px;
+      padding: 14px; margin-bottom: 18px; color: var(--muted); line-height: 1.5;
+    }
+    .ptabs { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 20px; }
+    .ptab {
+      background: var(--surf); border: 1px solid var(--border); border-radius: 14px; padding: 14px;
+      display:flex; gap:12px; align-items:center; cursor:pointer; transition:.2s ease;
+    }
+    .ptab.active { background: var(--surf2); border-color: var(--gold); box-shadow: var(--shadow); }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .av0 { background: rgba(126,205,196,.22); color: #2b8f86; }
+    .av1 { background: rgba(91,163,201,.22); color: #2d7fa8; }
+    .av2 { background: rgba(224,82,82,.18); color: #c03030; }
+    .ptab-name { font-weight: 700; }
+    .ptab-role { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .panel { display:none; }
+    .panel.active { display:block; }
+    .stabs {
+      display:flex; flex-wrap:wrap; gap:4px; background: var(--surf); border: 1px solid var(--border);
+      padding: 4px; border-radius: 10px; margin-bottom: 18px;
+    }
+    .stab {
+      border: none; background: transparent; color: var(--muted); padding: 8px 12px; border-radius: 7px; cursor:pointer;
+    }
+    .stab.active { background: var(--surf2); color: var(--text); border:1px solid var(--border2); }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card {
+      background: var(--surf); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+    }
+    .card.full { grid-column: 1 / -1; }
+    .card-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted);
+      margin-bottom: 14px; font-weight: 700;
+    }
+    .fld { margin-bottom: 12px; }
+    .fld label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+    .fi, textarea.fi, select.fi {
+      width:100%; background: var(--surf2); border:1px solid var(--border); border-radius: 8px;
+      padding: 9px 11px; color: var(--text); font: inherit;
+    }
+    textarea.fi { resize: vertical; min-height: 100px; }
+    .row { display:flex; gap:8px; }
+    .btn, .btn-add, .save-btn {
+      border:1px solid var(--border2); background: var(--surf2); color: var(--text); border-radius: 8px;
+      padding: 8px 12px; cursor:pointer; font: inherit;
+    }
+    .save-btn { background: linear-gradient(135deg,#7ecdc4,#3a9e96); border:none; font-weight:700; }
+    .btn-danger { color: var(--red); border-color: rgba(224,82,82,.35); }
+    .sum-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:10px; }
+    .sum-stat { background: var(--surf2); border:1px solid var(--border); border-radius: 10px; padding: 14px; text-align:center; }
+    .sum-val { font-family: 'Playfair Display', serif; font-size: 22px; color: #3a9e96; }
+    .sum-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 4px; }
+    .cc-list, .meta-list, .task-list { display:flex; flex-direction:column; gap:10px; }
+    .cc-card, .meta-item, .task-item {
+      background: var(--surf2); border:1px solid var(--border); border-radius: 12px; padding: 14px;
+    }
+    .cc-header { display:flex; justify-content:space-between; gap:10px; align-items:center; cursor:pointer; }
+    .cc-body { display:none; margin-top: 12px; padding-top: 12px; border-top:1px solid var(--border); }
+    .cc-body.open { display:block; }
+    .muted { color: var(--muted); }
+    .bbar-track { height: 8px; background: var(--surf3); border-radius: 999px; overflow:hidden; border:1px solid var(--border); }
+    .bbar-fill, .pbar { height:100%; border-radius:999px; }
+    .pbar-wrap { height:6px; background:var(--surf3); border-radius:999px; overflow:hidden; margin-top:8px; }
+    .items-tbl { width:100%; border-collapse: collapse; margin-top:10px; }
+    .items-tbl th, .items-tbl td { padding: 6px; border-bottom:1px solid var(--border); text-align:left; }
+    .items-tbl input { width:100%; border:none; background:transparent; font: inherit; }
+    .del-btn { border:none; background:none; color: var(--muted); cursor:pointer; }
+    .del-btn:hover { color: var(--red); }
+    .checklist-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .task-item { display:flex; align-items:center; gap:10px; }
+    .task-check {
+      width:18px; height:18px; border-radius:5px; border:1.5px solid var(--border2); cursor:pointer; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .task-check.done { background: var(--green); border-color: var(--green); }
+    .task-check.done::after { content:'✓'; color:white; font-size: 11px; font-weight: 700; }
+    .task-name-input.done { text-decoration: line-through; color: var(--muted); }
+    .empty { color: var(--muted); font-size: 13px; }
+    .global-box {
+      background: var(--surf2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 20px;
+    }
+    .global-box h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+    .global-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:10px; }
+    @media (max-width: 860px) {
+      .grid2, .ptabs, .global-grid, .sum-grid { grid-template-columns: 1fr; }
+      .hdr { flex-direction: column; align-items: flex-start; }
+      .row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <h2 style="font-family:'Playfair Display',serif;color:#3a9e96;">Cargando panel</h2>
+    <p class="muted">Conectando con Firebase...</p>
+  </div>
+
+  <div class="app" id="appContainer">
+    <header class="hdr">
+      <div>
+        <h1>Panel Editor</h1>
+        <p>Vista completa Fundación RUPA</p>
+      </div>
+      <div class="badge">Editor</div>
+    </header>
+
+    <div id="syncStatus">Conectando...</div>
+
+    <div class="fb-note" id="fbNote">
+      <strong>Configura Firebase.</strong> Revisa <code>shared.js</code> y reemplaza <code>FIREBASE_CONFIG</code> por los datos de tu proyecto.
+    </div>
+
+    <section class="global-box" id="globalDash"></section>
+
+    <div class="ptabs">
+      <div class="ptab active" onclick="switchPerson(0)">
+        <div class="avatar av0" id="av0">P1</div>
+        <div><div class="ptab-name" id="tabName0">Persona 1</div><div class="ptab-role" id="tabRole0">Cargo / Área</div></div>
+      </div>
+      <div class="ptab" onclick="switchPerson(1)">
+        <div class="avatar av1" id="av1">P2</div>
+        <div><div class="ptab-name" id="tabName1">Persona 2</div><div class="ptab-role" id="tabRole1">Cargo / Área</div></div>
+      </div>
+      <div class="ptab" onclick="switchPerson(2)">
+        <div class="avatar av2" id="av2">P3</div>
+        <div><div class="ptab-name" id="tabName2">Persona 3</div><div class="ptab-role" id="tabRole2">Cargo / Área</div></div>
+      </div>
+    </div>
+
+    <div id="panel0" class="panel active"></div>
+    <div id="panel1" class="panel"></div>
+    <div id="panel2" class="panel"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="./shared.js"></script>
+  <script>
+    let db = null;
+    let appData = [defaultPersona(0), defaultPersona(1), defaultPersona(2)];
+    let currentPerson = 0;
+    const activeSections = [0,0,0];
+    const activeMonths = [0,0,0];
+    const activeQuarters = [0,0,0];
+    const expandedCC = {};
+    let saveTimer = null;
+
+    function hideLoader() {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+    }
+
+    function setStatus(msg, cls='') {
+      const el = document.getElementById('syncStatus');
+      el.textContent = msg;
+      el.className = cls || '';
+    }
+
+    function scheduleSave(pi) {
+      clearTimeout(saveTimer);
+      setStatus('Guardando...', 'saving');
+      saveTimer = setTimeout(() => savePersona(pi), 800);
+    }
+
+    function savePersona(pi) {
+      if (!db) {
+        setStatus('Sin conexión a Firebase.', 'error');
+        return;
+      }
+      db.ref('personas/' + pi).set(appData[pi])
+        .then(() => {
+          setStatus('Guardado en la nube · ' + new Date().toLocaleTimeString('es-CL'), 'saved');
+          renderGlobalDashboard();
+        })
+        .catch((e) => {
+          console.error(e);
+          setStatus('Error al guardar.', 'error');
+        });
+    }
+
+    function initFirebase() {
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.database();
+        setStatus('Conectado · escuchando cambios', 'saved');
+        db.ref('personas').on('value', (snap) => {
+          const data = snap.val();
+          if (data) {
+            [0,1,2].forEach((i) => {
+              appData[i] = { ...defaultPersona(i), ...(data[i] || {}) };
+              if (!appData[i].centrosCosto) appData[i].centrosCosto = [];
+              if (!appData[i].metasAnuales) appData[i].metasAnuales = [];
+              if (!appData[i].metasMensuales) appData[i].metasMensuales = {};
+              if (!appData[i].metasTrimestrales) appData[i].metasTrimestrales = {};
+              if (!appData[i].tareasMensuales) appData[i].tareasMensuales = {};
+            });
+          }
+          renderAll();
+          hideLoader();
+        });
+      } catch (e) {
+        console.error(e);
+        document.getElementById('fbNote').style.display = 'block';
+        setStatus('Error de conexión · revisa Firebase', 'error');
+        renderAll();
+        hideLoader();
+      }
+    }
+
+    function switchPerson(i) {
+      currentPerson = i;
+      document.querySelectorAll('.ptab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+      document.querySelectorAll('.panel').forEach((p, idx) => p.classList.toggle('active', idx === i));
+    }
+
+    function switchSection(pi, si) {
+      activeSections[pi] = si;
+      renderPanel(pi);
+    }
+
+    function setMonth(pi, mi) {
+      activeMonths[pi] = mi;
+      if (!appData[pi].metasMensuales[mi]) appData[pi].metasMensuales[mi] = [];
+      renderPanel(pi);
+    }
+
+    function setQuarter(pi, qi) {
+      activeQuarters[pi] = qi;
+      if (!appData[pi].metasTrimestrales[qi]) appData[pi].metasTrimestrales[qi] = [];
+      renderPanel(pi);
+    }
+
+    function updateField(pi, field, value) {
+      appData[pi][field] = value;
+      scheduleSave(pi);
+      if (field === 'name' || field === 'role') updateTabs();
+    }
+
+    function updateTabs() {
+      [0,1,2].forEach((i) => {
+        const d = appData[i];
+        document.getElementById('tabName' + i).textContent = d.name || `Persona ${i+1}`;
+        document.getElementById('tabRole' + i).textContent = d.role || 'Cargo / Área';
+        document.getElementById('av' + i).textContent = initials(d.name || `Persona ${i+1}`);
+      });
+    }
+
+    function renderGlobalDashboard() {
+      const personas = appData;
+      const ccTotal = personas.reduce((s,p) => s + (p.centrosCosto || []).length, 0);
+      const metasTotal = personas.reduce((s,p) => s + (p.metasAnuales || []).length, 0);
+      const tareasTotal = personas.reduce((s,p) => s + Object.values(p.tareasMensuales || {}).flat().length, 0);
+      const tareasDone = personas.reduce((s,p) => s + Object.values(p.tareasMensuales || {}).flat().filter(t => t.done).length, 0);
+      document.getElementById('globalDash').innerHTML = `
+        <h3>Vista global</h3>
+        <div class="global-grid">
+          <div class="sum-stat"><div class="sum-val">${personas.length}</div><div class="sum-lbl">Personas</div></div>
+          <div class="sum-stat"><div class="sum-val">${ccTotal}</div><div class="sum-lbl">Centros de costo</div></div>
+          <div class="sum-stat"><div class="sum-val">${metasTotal}</div><div class="sum-lbl">Metas anuales</div></div>
+          <div class="sum-stat"><div class="sum-val">${tareasDone}/${tareasTotal}</div><div class="sum-lbl">Tareas completadas</div></div>
+        </div>`;
+    }
+
+    function toggleCC(pi, ci) {
+      const key = `${pi}-${ci}`;
+      expandedCC[key] = !expandedCC[key];
+      renderPanel(pi);
+    }
+
+    function updateCCName(pi, ci, value) {
+      appData[pi].centrosCosto[ci].name = value;
+      scheduleSave(pi);
+    }
+
+    function addCC(pi) {
+      const inp = document.getElementById('newCC' + pi);
+      const value = inp.value.trim();
+      if (!value) return;
+      appData[pi].centrosCosto.push({ name: value, categorias: [] });
+      inp.value = '';
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function removeCC(pi, ci) {
+      appData[pi].centrosCosto.splice(ci, 1);
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function addCategoria(pi, ci) {
+      const inp = document.getElementById(`newCat${pi}_${ci}`);
+      const value = inp.value.trim();
+      if (!value) return;
+      const cc = appData[pi].centrosCosto[ci];
+      if (!cc.categorias) cc.categorias = [];
+      cc.categorias.push({ name: value, presupuesto: 0, gastos: [] });
+      inp.value = '';
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function removeCategoria(pi, ci, ki) {
+      appData[pi].centrosCosto[ci].categorias.splice(ki, 1);
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function updateCatName(pi, ci, ki, value) {
+      appData[pi].centrosCosto[ci].categorias[ki].name = value;
+      scheduleSave(pi);
+    }
+
+    function updateCatPresupuesto(pi, ci, ki, value) {
+      appData[pi].centrosCosto[ci].categorias[ki].presupuesto = value;
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function addGasto(pi, ci, ki) {
+      const descInp = document.getElementById(`newGastoDesc${pi}_${ci}_${ki}`);
+      const montoInp = document.getElementById(`newGastoMonto${pi}_${ci}_${ki}`);
+      const desc = descInp.value.trim();
+      const monto = montoInp.value;
+      if (!desc || !monto) return;
+      const cat = appData[pi].centrosCosto[ci].categorias[ki];
+      if (!cat.gastos) cat.gastos = [];
+      cat.gastos.push({ desc, monto });
+      descInp.value = '';
+      montoInp.value = '';
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function removeGasto(pi, ci, ki, gi) {
+      appData[pi].centrosCosto[ci].categorias[ki].gastos.splice(gi, 1);
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function getTareasRef(pi, mk) {
+      if (!appData[pi].tareasMensuales) appData[pi].tareasMensuales = {};
+      if (!appData[pi].tareasMensuales[mk]) appData[pi].tareasMensuales[mk] = [];
+      return appData[pi].tareasMensuales[mk];
+    }
+
+    function addTarea(pi, mk) {
+      const inp = document.getElementById(`newTarea${pi}_${mk}`);
+      if (!inp || !inp.value.trim()) return;
+      getTareasRef(pi, mk).push({ name: inp.value.trim(), done: false, prioridad: 'media' });
+      inp.value = '';
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function toggleTarea(pi, mk, ti) {
+      const ref = getTareasRef(pi, mk);
+      ref[ti].done = !ref[ti].done;
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function updateTareaName(pi, mk, ti, value) {
+      getTareasRef(pi, mk)[ti].name = value;
+      scheduleSave(pi);
+    }
+
+    function updateTareaPrioridad(pi, mk, ti, value) {
+      getTareasRef(pi, mk)[ti].prioridad = value;
+      scheduleSave(pi);
+    }
+
+    function deleteTarea(pi, mk, ti) {
+      getTareasRef(pi, mk).splice(ti, 1);
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function getMetasRef(pi, type, sk) {
+      if (type === 'annual') return appData[pi].metasAnuales;
+      if (type === 'monthly') {
+        if (!appData[pi].metasMensuales[sk]) appData[pi].metasMensuales[sk] = [];
+        return appData[pi].metasMensuales[sk];
+      }
+      if (!appData[pi].metasTrimestrales[sk]) appData[pi].metasTrimestrales[sk] = [];
+      return appData[pi].metasTrimestrales[sk];
+    }
+
+    function addMeta(pi, type, sk) {
+      const inp = document.getElementById(`newMeta${pi}_${type}_${sk}`);
+      if (!inp || !inp.value.trim()) return;
+      getMetasRef(pi, type, sk).push({
+        name: inp.value.trim(), meta: 0, actual: 0, unit: '', ano: new Date().getFullYear()
+      });
+      inp.value = '';
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function updateMeta(pi, type, sk, mi, field, value) {
+      getMetasRef(pi, type, sk)[mi][field] = value;
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function deleteMeta(pi, type, sk, mi) {
+      getMetasRef(pi, type, sk).splice(mi, 1);
+      scheduleSave(pi);
+      renderPanel(pi);
+    }
+
+    function calcCCLocal(cc) {
+      const categorias = cc.categorias || [];
+      const presup = categorias.reduce((s, c) => s + (parseFloat(c.presupuesto) || 0), 0);
+      const used = categorias.reduce((s, c) => s + (c.gastos || []).reduce((g, it) => g + (parseFloat(it.monto) || 0), 0), 0);
+      return { presup, used, avail: presup - used, p: presup ? Math.min(100, Math.round((used / presup) * 100)) : 0 };
+    }
+
+    function renderCCCard(pi, ci, cc) {
+      const s = calcCCLocal(cc);
+      const key = `${pi}-${ci}`;
+      const isOpen = !!expandedCC[key];
+      const barColor = progColor(s.p);
+      const categorias = cc.categorias || [];
+      const catsHTML = categorias.map((cat, ki) => {
+        const catPresup = parseFloat(cat.presupuesto) || 0;
+        const catUsed = (cat.gastos || []).reduce((a, g) => a + (parseFloat(g.monto) || 0), 0);
+        const catPct = catPresup ? Math.min(100, Math.round((catUsed / catPresup) * 100)) : 0;
+        const gastosHTML = (cat.gastos || []).map((g, gi) => `
+          <tr>
+            <td>${escH(g.desc)}</td>
+            <td>${fmt(g.monto)}</td>
+            <td>${catPresup ? pct(parseFloat(g.monto)||0, catPresup) : 0}%</td>
+            <td><button class="del-btn" onclick="removeGasto(${pi},${ci},${ki},${gi})">✕</button></td>
+          </tr>`).join('');
+        return `
+          <div class="card" style="margin-bottom:10px;padding:12px;">
+            <div class="row" style="align-items:center;">
+              <input class="fi" value="${escH(cat.name)}" placeholder="Nombre categoría" onchange="updateCatName(${pi},${ci},${ki},this.value)">
+              <input type="number" class="fi" value="${cat.presupuesto || 0}" placeholder="Presupuesto" onchange="updateCatPresupuesto(${pi},${ci},${ki},this.value)">
+              <button class="btn btn-danger" onclick="removeCategoria(${pi},${ci},${ki})">Eliminar</button>
+            </div>
+            <div style="margin-top:10px;" class="muted">Usado ${fmt(catUsed)} de ${fmt(catPresup)} · ${catPct}%</div>
+            <div class="bbar-track" style="margin-top:8px;"><div class="bbar-fill" style="width:${catPct}%;background:${progColor(catPct)}"></div></div>
+            <table class="items-tbl">
+              <thead><tr><th>Gasto</th><th>Monto</th><th>%</th><th></th></tr></thead>
+              <tbody>${gastosHTML || '<tr><td colspan="4" class="empty">Sin gastos.</td></tr>'}</tbody>
+            </table>
+            <div class="row" style="margin-top:8px;">
+              <input type="text" class="fi" id="newGastoDesc${pi}_${ci}_${ki}" placeholder="Descripción del gasto">
+              <input type="number" class="fi" id="newGastoMonto${pi}_${ci}_${ki}" placeholder="Monto">
+              <button class="btn-add" onclick="addGasto(${pi},${ci},${ki})">Agregar gasto</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="cc-card">
+          <div class="cc-header" onclick="toggleCC(${pi},${ci})">
+            <div style="flex:1;">
+              <input class="fi" value="${escH(cc.name)}" onclick="event.stopPropagation()" onchange="updateCCName(${pi},${ci},this.value)">
+              <div class="muted" style="margin-top:6px;">${categorias.length} categorías · Presupuesto ${fmt(s.presup)} · Usado ${fmt(s.used)}</div>
+              <div class="bbar-track" style="margin-top:8px;"><div class="bbar-fill" style="width:${s.p}%;background:${barColor}"></div></div>
+            </div>
+            <div>${isOpen ? '▴' : '▾'}</div>
+          </div>
+          <div class="cc-body ${isOpen ? 'open' : ''}">
+            ${catsHTML || '<div class="empty">Todavía no hay categorías.</div>'}
+            <div class="row" style="margin-top:10px;">
+              <input type="text" class="fi" id="newCat${pi}_${ci}" placeholder="Nueva categoría">
+              <button class="btn-add" onclick="addCategoria(${pi},${ci})">Agregar categoría</button>
+              <button class="btn btn-danger" onclick="removeCC(${pi},${ci})">Eliminar centro</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderChecklist(pi, mk) {
+      const tareas = getTareasRef(pi, mk);
+      const done = tareas.filter(t => t.done).length;
+      const rows = tareas.map((t, ti) => `
+        <div class="task-item">
+          <div class="task-check ${t.done ? 'done' : ''}" onclick="toggleTarea(${pi},${mk},${ti})"></div>
+          <input class="fi task-name-input ${t.done ? 'done' : ''}" value="${escH(t.name)}" onchange="updateTareaName(${pi},${mk},${ti},this.value)">
+          <select class="fi" onchange="updateTareaPrioridad(${pi},${mk},${ti},this.value)">
+            <option value="alta" ${t.prioridad==='alta'?'selected':''}>Alta</option>
+            <option value="media" ${t.prioridad==='media'?'selected':''}>Media</option>
+            <option value="baja" ${t.prioridad==='baja'?'selected':''}>Baja</option>
+          </select>
+          <button class="del-btn" onclick="deleteTarea(${pi},${mk},${ti})">✕</button>
+        </div>`).join('');
+      return `
+        <div class="card full">
+          <div class="checklist-header">
+            <div class="card-title" style="margin-bottom:0;">Tareas del mes</div>
+            <div class="muted">${done}/${tareas.length} completadas</div>
+          </div>
+          <div class="task-list">${rows || '<div class="empty">Sin tareas registradas.</div>'}</div>
+          <div class="row" style="margin-top:10px;">
+            <input type="text" class="fi" id="newTarea${pi}_${mk}" placeholder="Nueva tarea">
+            <button class="btn-add" onclick="addTarea(${pi},${mk})">Agregar tarea</button>
+          </div>
+        </div>`;
+    }
+
+    function metaItemsHTML(pi, type, sk, metas) {
+      return metas.map((m, mi) => {
+        const p = pct(parseFloat(m.actual)||0, parseFloat(m.meta)||0);
+        return `
+          <div class="meta-item">
+            <div class="row">
+              <input class="fi" value="${escH(m.name)}" placeholder="Nombre meta" onchange="updateMeta(${pi},'${type}','${sk}',${mi},'name',this.value)">
+              <button class="btn btn-danger" onclick="deleteMeta(${pi},'${type}','${sk}',${mi})">Eliminar</button>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <input type="number" class="fi" value="${m.meta || 0}" placeholder="Meta" onchange="updateMeta(${pi},'${type}','${sk}',${mi},'meta',this.value)">
+              <input type="number" class="fi" value="${m.actual || 0}" placeholder="Actual" onchange="updateMeta(${pi},'${type}','${sk}',${mi},'actual',this.value)">
+              <input class="fi" value="${escH(m.unit || '')}" placeholder="Unidad" onchange="updateMeta(${pi},'${type}','${sk}',${mi},'unit',this.value)">
+              <input type="number" class="fi" value="${m.ano || new Date().getFullYear()}" placeholder="Año" onchange="updateMeta(${pi},'${type}','${sk}',${mi},'ano',this.value)">
+            </div>
+            <div class="pbar-wrap"><div class="pbar" style="width:${p}%;background:${progColor(p)}"></div></div>
+            <div class="muted" style="margin-top:6px;">${p}% logrado</div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderMetas(pi) {
+      const annual = appData[pi].metasAnuales || [];
+      const mk = activeMonths[pi];
+      const qk = activeQuarters[pi];
+      const monthly = getMetasRef(pi, 'monthly', mk);
+      const quarterly = getMetasRef(pi, 'quarterly', qk);
+      const sum = calcSummary(annual);
+      return `
+        <div class="grid2">
+          <div class="card full">
+            <div class="card-title">Resumen anual</div>
+            <div class="sum-grid">
+              <div class="sum-stat"><div class="sum-val">${sum.total}</div><div class="sum-lbl">Metas</div></div>
+              <div class="sum-stat"><div class="sum-val">${sum.pct}%</div><div class="sum-lbl">Avance</div></div>
+              <div class="sum-stat"><div class="sum-val">${sum.logradas}</div><div class="sum-lbl">Logradas</div></div>
+            </div>
+          </div>
+          <div class="card full">
+            <div class="card-title">Metas anuales</div>
+            <div class="meta-list">${metaItemsHTML(pi,'annual','all',annual) || '<div class="empty">Sin metas anuales.</div>'}</div>
+            <div class="row" style="margin-top:10px;"><input class="fi" id="newMeta${pi}_annual_all" placeholder="Nueva meta anual"><button class="btn-add" onclick="addMeta(${pi},'annual','all')">Agregar</button></div>
+          </div>
+          <div class="card full">
+            <div class="card-title">Metas mensuales</div>
+            <div class="stabs">${MONTHS.map((m, idx) => `<button class="stab ${idx===mk?'active':''}" onclick="setMonth(${pi},${idx})">${MONTHS_S[idx]}</button>`).join('')}</div>
+            <div class="meta-list">${metaItemsHTML(pi,'monthly',mk,monthly) || '<div class="empty">Sin metas mensuales.</div>'}</div>
+            <div class="row" style="margin-top:10px;"><input class="fi" id="newMeta${pi}_monthly_${mk}" placeholder="Nueva meta mensual"><button class="btn-add" onclick="addMeta(${pi},'monthly','${mk}')">Agregar</button></div>
+          </div>
+          <div class="card full">
+            <div class="card-title">Metas trimestrales</div>
+            <div class="stabs">${QUARTERS.map((q, idx) => `<button class="stab ${idx===qk?'active':''}" onclick="setQuarter(${pi},${idx})">${q}</button>`).join('')}</div>
+            <div class="meta-list">${metaItemsHTML(pi,'quarterly',qk,quarterly) || '<div class="empty">Sin metas trimestrales.</div>'}</div>
+            <div class="row" style="margin-top:10px;"><input class="fi" id="newMeta${pi}_quarterly_${qk}" placeholder="Nueva meta trimestral"><button class="btn-add" onclick="addMeta(${pi},'quarterly','${qk}')">Agregar</button></div>
+          </div>
+          ${renderChecklist(pi, mk)}
+        </div>`;
+    }
+
+    function renderGeneral(pi) {
+      const d = appData[pi];
+      return `
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title">Identidad</div>
+            <div class="fld"><label>Nombre</label><input class="fi" value="${escH(d.name)}" onchange="updateField(${pi},'name',this.value)"></div>
+            <div class="fld"><label>Cargo / Área</label><input class="fi" value="${escH(d.role)}" onchange="updateField(${pi},'role',this.value)"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Notas</div>
+            <textarea class="fi" onchange="updateField(${pi},'notas',this.value)">${escH(d.notas || '')}</textarea>
+          </div>
+        </div>`;
+    }
+
+    function renderPresupuesto(pi) {
+      const centros = appData[pi].centrosCosto || [];
+      return `
+        <div class="card full">
+          <div class="card-title">Centros de costo</div>
+          <div class="cc-list">${centros.map((cc, ci) => renderCCCard(pi, ci, cc)).join('') || '<div class="empty">Sin centros de costo.</div>'}</div>
+          <div class="row" style="margin-top:12px;">
+            <input class="fi" id="newCC${pi}" placeholder="Nuevo centro de costo">
+            <button class="btn-add" onclick="addCC(${pi})">Agregar centro</button>
+          </div>
+        </div>`;
+    }
+
+    function renderPanel(pi) {
+      const section = activeSections[pi];
+      const sections = ['General','Presupuesto','Metas'];
+      const html = `
+        <div class="stabs">${sections.map((s, i) => `<button class="stab ${i===section?'active':''}" onclick="switchSection(${pi},${i})">${s}</button>`).join('')}</div>
+        ${section === 0 ? renderGeneral(pi) : ''}
+        ${section === 1 ? renderPresupuesto(pi) : ''}
+        ${section === 2 ? renderMetas(pi) : ''}`;
+      document.getElementById('panel' + pi).innerHTML = html;
+    }
+
+    function renderAll() {
+      updateTabs();
+      renderPanel(0);
+      renderPanel(1);
+      renderPanel(2);
+      renderGlobalDashboard();
+    }
+
+    initFirebase();
+  </script>
+</body>
+</html>
