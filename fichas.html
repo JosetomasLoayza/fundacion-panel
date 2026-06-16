@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fichas Clínicas — Fundación RUPA</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eae6dd;--surf:#f5f2ec;--surf2:#ffffff;--surf3:#f0ece4;
+  --border:#d4cfc6;--border2:#b8b2a8;
+  --text:#1a1a1a;--muted:#6b6660;
+  --accent:#2a7a6f;--green:#3aaa6e;--red:#e05252;--warn:#c8860a;
+  --navy:#1a2e4a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;}
+.login-box{background:var(--surf2);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:100%;max-width:360px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.08);}
+.login-logo{font-family:'Playfair Display',serif;font-size:22px;color:var(--accent);margin-bottom:6px;}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:28px;}
+.login-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500;display:block;margin-bottom:6px;text-align:left;}
+.login-input{width:100%;background:var(--surf3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;margin-bottom:16px;}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:9px;padding:11px;color:white;font-weight:600;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:opacity .2s;}
+.login-btn:hover{opacity:.88;}
+.login-error{font-size:12px;color:var(--red);margin-top:10px;min-height:16px;}
+.lock-icon{font-size:36px;margin-bottom:16px;}
+
+/* APP */
+#appScreen{display:none;}
+.topbar{background:var(--navy);color:white;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.topbar-title{font-family:'Playfair Display',serif;font-size:15px;}
+.topbar-title span{color:#6ecec5;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-badge{font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);padding:3px 10px;border-radius:20px;letter-spacing:.05em;}
+.logout-btn{font-size:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:white;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.logout-btn:hover{background:rgba(255,255,255,0.15);}
+
+.container{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
+
+/* SYNC */
+#syncStatus{font-size:12px;color:var(--muted);margin-bottom:16px;min-height:18px;}
+#syncStatus.saved{color:var(--green);}
+#syncStatus.saving{color:var(--warn);}
+#syncStatus.error{color:var(--red);}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.toolbar-left{display:flex;align-items:center;gap:8px;}
+.search-input{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;width:220px;transition:border-color .2s;}
+.search-input:focus{border-color:var(--accent);}
+.filter-select{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--muted);outline:none;cursor:pointer;}
+.new-btn{background:var(--accent);border:none;border-radius:8px;padding:9px 18px;color:white;font-weight:600;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
+.new-btn:hover{opacity:.88;}
+
+/* FICHA LIST */
+.ficha-list{display:flex;flex-direction:column;gap:10px;}
+.ficha-card{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+.ficha-card:hover{border-color:var(--accent);box-shadow:0 2px 12px rgba(42,122,111,0.1);}
+.ficha-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.ficha-card-name{font-weight:600;font-size:14px;}
+.ficha-card-id{font-size:11px;color:var(--muted);font-family:monospace;background:var(--surf3);padding:2px 8px;border-radius:4px;}
+.ficha-card-meta{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap;}
+.ficha-card-meta span{display:flex;align-items:center;gap:4px;}
+.estado-pill{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:500;}
+.estado-activa{background:#d4edda;color:#155724;}
+.estado-alta{background:#d1ecf1;color:#0c5460;}
+.estado-pausa{background:#fff3cd;color:#856404;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state p{font-size:14px;margin-top:8px;}
+
+/* MODAL / DRAWER */
+#fichaModal{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);overflow-y:auto;}
+.modal-inner{background:var(--bg);min-height:100vh;max-width:840px;margin:0 auto;padding:0;}
+.modal-topbar{background:var(--navy);color:white;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.modal-topbar-title{font-family:'Playfair Display',serif;font-size:14px;}
+.modal-close{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:6px;padding:4px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;}
+.modal-body{padding:24px 24px 60px;}
+
+/* STEPPER */
+.stepper{display:flex;background:var(--surf2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+.step-item{flex:1;padding:12px 6px;text-align:center;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;}
+.step-item:last-child{border-right:none;}
+.step-item:hover:not(.step-active){background:var(--surf3);}
+.step-num{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.step-lbl{display:block;font-size:10px;font-weight:500;color:var(--muted);line-height:1.3;margin-top:2px;}
+.step-active{background:var(--accent);}
+.step-active .step-num,.step-active .step-lbl{color:white;}
+.step-done{background:#e8f4f2;}
+.step-done .step-num,.step-done .step-lbl{color:var(--accent);}
+
+/* PANEL SECTIONS */
+.panel-section{display:none;}
+.panel-section.active{display:block;}
+
+/* CARDS */
+.fcard{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.fcard-title{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e8f4f2;}
+
+/* FORM GRID */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+.fgrid.g2{grid-template-columns:repeat(2,1fr);}
+.fgrid.g3{grid-template-columns:repeat(3,1fr);}
+.fgrid.g1{grid-template-columns:1fr;}
+.ffield{display:flex;flex-direction:column;gap:4px;}
+.ffield.s2{grid-column:span 2;}
+.ffield.s3{grid-column:span 3;}
+.ffield label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;}
+.ffield label .req{color:#c8860a;margin-left:2px;}
+.ffield input,.ffield select,.ffield textarea{font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:6px;background:white;color:var(--text);outline:none;transition:border-color .15s;}
+.ffield input:focus,.ffield select:focus,.ffield textarea:focus{border-color:var(--accent);}
+.ffield textarea{resize:vertical;min-height:78px;}
+
+/* RADIO / CHECK */
+.radio-grp,.check-grp{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;}
+.radio-grp label,.check-grp label{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text);cursor:pointer;padding:5px 11px;border:1px solid var(--border);border-radius:20px;transition:all .12s;}
+.radio-grp input,.check-grp input{accent-color:var(--accent);}
+.radio-grp label:has(input:checked),.check-grp label:has(input:checked){background:#e8f4f2;border-color:var(--accent);color:var(--accent);font-weight:600;}
+
+/* SESSIONS */
+.session-entry{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;}
+.session-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surf3);cursor:pointer;user-select:none;}
+.session-hdr-left{font-weight:600;font-size:13px;color:var(--navy);}
+.session-hdr-date{font-size:11px;color:var(--muted);font-weight:400;}
+.session-toggle{font-size:14px;color:var(--muted);transition:transform .2s;}
+.session-entry.open .session-toggle{transform:rotate(180deg);}
+.session-body{display:none;padding:16px;}
+.session-entry.open .session-body{display:block;}
+
+/* NAV */
+.panel-nav{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--border);}
+.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:9px 22px;border-radius:7px;cursor:pointer;transition:all .15s;border:none;}
+.btn-outline{background:var(--surf2);border:1px solid var(--border);color:var(--muted);}
+.btn-outline:hover{background:var(--surf3);}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{opacity:.88;}
+.btn-save{background:var(--navy);color:white;}
+.btn-save:hover{opacity:.88;}
+.btn-del{background:var(--surf2);border:1px solid #e0b0b0;color:var(--red);font-size:12px;padding:6px 12px;}
+.btn-del:hover{background:#fff0f0;}
+.btn-add-session{display:flex;align-items:center;gap:5px;background:none;border:1.5px dashed var(--accent);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:9px 16px;border-radius:7px;cursor:pointer;transition:background .15s;margin-top:10px;}
+.btn-add-session:hover{background:#e8f4f2;}
+
+/* FICHA ID BAR */
+.ficha-id-bar{display:flex;align-items:center;justify-content:space-between;background:var(--navy);color:white;border-radius:10px;padding:12px 18px;margin-bottom:22px;font-size:13px;}
+.ficha-id-val{font-family:monospace;font-size:14px;font-weight:700;background:rgba(255,255,255,0.12);padding:3px 11px;border-radius:4px;}
+.ficha-id-lbl{opacity:.7;font-size:10px;text-transform:uppercase;letter-spacing:.08em;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:white;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.ok{background:var(--accent);}
+
+
+/* ADJUNTOS */
+.adj-zona{border:2px dashed var(--accent);border-radius:8px;padding:20px;text-align:center;cursor:pointer;background:white;transition:background .15s;margin-bottom:12px;}
+.adj-zona:hover{background:#f0faf8;}
+.adj-zona p{font-size:12px;color:var(--muted);margin-top:6px;}
+.adj-item{display:flex;align-items:center;justify-content:space-between;background:var(--surf3);border:1px solid var(--border);border-radius:8px;padding:9px 13px;margin-bottom:7px;}
+.adj-info{display:flex;align-items:center;gap:9px;flex:1;min-width:0;}
+.adj-icon{font-size:20px;}
+.adj-nombre{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.adj-meta{font-size:11px;color:var(--muted);}
+.adj-btns{display:flex;gap:6px;}
+.adj-btn{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--surf2);color:var(--text);}
+.adj-btn.del{border-color:#e0b0b0;color:var(--red);}
+
+@media(max-width:600px){
+  .fgrid.g3,.fgrid.g2{grid-template-columns:1fr;}
+  .ffield.s2,.ffield.s3{grid-column:span 1;}
+  .step-lbl{font-size:9px;}
+  .container{padding:16px 12px 60px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="lock-icon">&#128274;</div>
+    <div class="login-logo">Fundaci&oacute;n RUPA</div>
+    <div class="login-sub">Fichas Cl&iacute;nicas &middot; Acceso restringido</div>
+    <label class="login-label">Contrase&ntilde;a</label>
+    <input class="login-input" type="password" id="pwInput" placeholder="Ingresar contrase&ntilde;a..." onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <div class="topbar">
+    <div class="topbar-title">Fundaci&oacute;n <span>RUPA</span> &middot; Fichas Cl&iacute;nicas</div>
+    <div class="topbar-right">
+      <div class="topbar-badge">Uso interno</div>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="syncStatus">Conectando...</div>
+
+    <!-- LISTA DE FICHAS -->
+    <div id="listView">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input class="search-input" type="text" id="searchInput" placeholder="&#128269; Buscar por nombre..." oninput="renderList()">
+          <select class="filter-select" id="estadoFilter" onchange="renderList()">
+            <option value="">Todos los estados</option>
+            <option value="activa">En proceso</option>
+            <option value="alta">Alta / Egreso</option>
+            <option value="pausa">En pausa</option>
+          </select>
+        </div>
+        <button class="new-btn" onclick="openNewFicha()">+ Nueva ficha</button>
+      </div>
+      <div id="fichaListContainer" class="ficha-list"></div>
+    </div>
+
+    <!-- MODAL FICHA -->
+    <div id="fichaModal">
+      <div class="modal-inner">
+        <div class="modal-topbar">
+          <div class="modal-topbar-title" id="modalTitle">Nueva Ficha Cl&iacute;nica</div>
+          <button class="modal-close" onclick="closeModal()">&#10005; Cerrar</button>
+        </div>
+        <div class="modal-body">
+
+          <div class="ficha-id-bar">
+            <div>
+              <div class="ficha-id-lbl">N&deg; de ficha</div>
+              <div class="ficha-id-val" id="fichaIdDisplay">RUPA-2026-001</div>
+            </div>
+            <div style="text-align:right">
+              <div class="ficha-id-lbl">Fecha apertura</div>
+              <div id="fichaFechaDisplay" style="font-size:13px;font-weight:600;color:white;"></div>
+            </div>
+          </div>
+
+          <!-- STEPPER -->
+          <div class="stepper" id="stepper">
+            <div class="step-item step-active" onclick="goStep(0)"><span class="step-num">01</span><span class="step-lbl">Datos NNA</span></div>
+            <div class="step-item" onclick="goStep(1)"><span class="step-num">02</span><span class="step-lbl">Adulto signif.</span></div>
+            <div class="step-item" onclick="goStep(2)"><span class="step-num">03</span><span class="step-lbl">Consulta</span></div>
+            <div class="step-item" onclick="goStep(3)"><span class="step-num">04</span><span class="step-lbl">Evaluaci&oacute;n</span></div>
+            <div class="step-item" onclick="goStep(4)"><span class="step-num">05</span><span class="step-lbl">Plan</span></div>
+            <div class="step-item" onclick="goStep(5)"><span class="step-num">06</span><span class="step-lbl">Sesiones</span></div>
+            <div class="step-item" onclick="goStep(6)"><span class="step-num">07</span><span class="step-lbl">Documentos</span></div>
+          </div>
+
+          <!-- SECCIÓN 0: DATOS NNA -->
+          <div class="panel-section active" id="sec-0">
+            <div class="fcard">
+              <div class="fcard-title">Identificaci&oacute;n del NNA</div>
+              <div class="fgrid g3">
+                <div class="ffield"><label>Nombres <span class="req">*</span></label><input type="text" id="nna_nombres" placeholder="Nombres completos"></div>
+                <div class="ffield"><label>Apellido paterno</label><input type="text" id="nna_ap"></div>
+                <div class="ffield"><label>Apellido materno</label><input type="text" id="nna_am"></div>
+                <div class="ffield"><label>RUN / Documento</label><input type="text" id="nna_run" placeholder="12.345.678-9"></div>
+                <div class="ffield"><label>Fecha de nacimiento</label><input type="date" id="nna_fec_nac"></div>
+                <div class="ffield"><label>Sexo / G&eacute;nero</label>
+                  <div class="radio-grp">
+                    <label><input type="radio" name="nna_sexo" value="F"> Femenino</label>
+                    <label><input type="radio" name="nna_sexo" value="M"> Masculino</label>
+                    <label><input type="radio" name="nna_sexo" value="O"> Otro</label>
+                  </div>
+                </div>
+                <div class="ffield s2"><label>Nacionalidad</label>
+                  <select id="nna_nac">
+                    <option value="">Seleccionar...</option>
+                    <option>Chilena</option><option>Venezolana</option><option>Peruana</option>
+                    <option>Colombiana</option><option>Boliviana</option><option>Haitiana</option><option>Otra</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Situaci&oacute;n escolar</div>
+              <div class="fgrid g3">
+                <div class="ffield"><label>Asiste actualmente</label>
+                  <div class="radio-grp">
+                    <label><input type="radio" name="nna_escolar" value="si"> S&iacute;</label>
+                    <label><input type="radio" name="nna_escolar" value="no"> No</label>
+                  </div>
+                </div>
+                <div class="ffield s2"><label>Nombre establecimiento</label><input type="text" id="nna_colegio" placeholder="Nombre del colegio / escuela"></div>
+                <div class="ffield"><label>Nivel / Curso</label>
+                  <select id="nna_nivel">
+                    <option value="">Seleccionar...</option>
+                    <option>Pre-k&iacute;nder / K&iacute;nder</option>
+                    <option>1&deg; B&aacute;sico</option><option>2&deg; B&aacute;sico</option><option>3&deg; B&aacute;sico</option>
+                    <option>4&deg; B&aacute;sico</option><option>5&deg; B&aacute;sico</option><option>6&deg; B&aacute;sico</option>
+                    <option>7&deg; B&aacute;sico</option><option>8&deg; B&aacute;sico</option>
+                    <option>1&deg; Medio</option><option>2&deg; Medio</option><option>3&deg; Medio</option><option>4&deg; Medio</option>
+                    <option>Sin escolaridad</option>
+                  </select>
+                </div>
+                <div class="ffield s2"><label>Observaciones escolares</label><textarea id="nna_obs_escolar" placeholder="Repitencias, ausentismo, dificultades..."></textarea></div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Composici&oacute;n familiar y residencia</div>
+              <div class="fgrid g2">
+                <div class="ffield"><label>Adulto/a responsable a cargo</label><input type="text" id="nna_adulto_cargo" placeholder="Nombre y v&iacute;nculo"></div>
+                <div class="ffield"><label>Tel&eacute;fono de contacto</label><input type="tel" id="nna_telefono" placeholder="+56 9 XXXX XXXX"></div>
+                <div class="ffield s2"><label>Direcci&oacute;n</label><input type="text" id="nna_direccion" placeholder="Calle, n&uacute;mero, villa/poblaci&oacute;n, comuna"></div>
+                <div class="ffield s2"><label>Grupo familiar conviviente</label><textarea id="nna_familia" placeholder="Qui&eacute;nes viven con el/la NNA, edades, tipo de vivienda..."></textarea></div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Programa/s RUPA</div>
+              <div class="fgrid g1">
+                <div class="ffield">
+                  <label>Programa/s al que pertenece</label>
+                  <div class="check-grp">
+                    <label><input type="checkbox" name="nna_prog" value="Aprendo a Aprender"> Aprendo a Aprender</label>
+                    <label><input type="checkbox" name="nna_prog" value="Me Conozco Jugando"> Me Conozco Jugando</label>
+                    <label><input type="checkbox" name="nna_prog" value="Creando mi Futuro"> Creando mi Futuro</label>
+                    <label><input type="checkbox" name="nna_prog" value="Atención Psicológica"> Atención Psicológica</label>
+                  </div>
+                </div>
+                <div class="ffield"><label>Fecha de ingreso a RUPA</label><input type="date" id="nna_fecha_ingreso"></div>
+                <div class="ffield"><label>Fecha de inicio de atención</label><input type="date" id="nna_fecha_inicio_atencion"></div>
+                <div class="ffield"><label>Solicitante de atenci&oacute;n</label><input type="text" id="nna_derivador" placeholder="Nombre y cargo"></div>
+                <div class="ffield"><label>Instituci&oacute;n derivadora</label><input type="text" id="nna_inst_deriva"></div>
+              </div>
+            </div>
+            <div class="panel-nav">
+              <div></div>
+              <button class="btn btn-primary" onclick="goStep(1)">Siguiente &rarr;</button>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 1: ADULTO SIGNIFICATIVO -->
+          <div class="panel-section" id="sec-1">
+            <div class="fcard">
+              <div class="fcard-title">Identificaci&oacute;n del adulto significativo</div>
+              <div class="fgrid g3">
+                <div class="ffield"><label>Nombres</label><input type="text" id="ad_nombres"></div>
+                <div class="ffield"><label>Apellido paterno</label><input type="text" id="ad_ap"></div>
+                <div class="ffield"><label>Apellido materno</label><input type="text" id="ad_am"></div>
+                <div class="ffield"><label>RUN</label><input type="text" id="ad_run" placeholder="12.345.678-9"></div>
+                <div class="ffield"><label>V&iacute;nculo con el/la NNA</label>
+                  <select id="ad_vinculo">
+                    <option value="">Seleccionar...</option>
+                    <option>Padre</option><option>Madre</option><option>Abuelo/a</option>
+                    <option>T&iacute;o/a</option><option>Hermano/a mayor</option><option>Otro familiar</option>
+                  </select>
+                </div>
+                <div class="ffield"><label>Edad aproximada</label><input type="number" id="ad_edad" min="18" max="90"></div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Situaci&oacute;n penal</div>
+              <div class="fgrid g2">
+                <div class="ffield"><label>Recinto penitenciario</label><input type="text" id="ad_recinto" placeholder="Nombre del CRS, CDP, CPF..."></div>
+                <div class="ffield"><label>Regi&oacute;n</label>
+                  <select id="ad_region">
+                    <option value="">Seleccionar...</option>
+                    <option>Metropolitana</option><option>Valpara&iacute;so</option><option>O'Higgins</option>
+                    <option>Maule</option><option>Biob&iacute;o</option><option>Araucan&iacute;a</option>
+                    <option>Los Lagos</option><option>Antofagasta</option><option>Otra</option>
+                  </select>
+                </div>
+                <div class="ffield"><label>Situaci&oacute;n procesal</label>
+                  <div class="radio-grp">
+                    <label><input type="radio" name="ad_procesal" value="imputado"> Imputado/a</label>
+                    <label><input type="radio" name="ad_procesal" value="condenado"> Condenado/a</label>
+                    <label><input type="radio" name="ad_procesal" value="beneficio"> Con beneficio</label>
+                  </div>
+                </div>
+                <div class="ffield"><label>Tiempo estimado de reclusi&oacute;n</label><input type="text" id="ad_tiempo" placeholder="Ej: 3 a&ntilde;os, indefinido..."></div>
+                <div class="ffield"><label>Contacto con el/la NNA</label>
+                  <div class="radio-grp">
+                    <label><input type="radio" name="ad_contacto" value="si"> S&iacute;</label>
+                    <label><input type="radio" name="ad_contacto" value="no"> No</label>
+                    <label><input type="radio" name="ad_contacto" value="esporadico"> Espor&aacute;dico</label>
+                  </div>
+                </div>
+                <div class="ffield"><label>Tipo de contacto</label>
+                  <div class="check-grp">
+                    <label><input type="checkbox" name="ad_tipo_contacto" value="visitas"> Visitas</label>
+                    <label><input type="checkbox" name="ad_tipo_contacto" value="llamadas"> Llamadas</label>
+                    <label><input type="checkbox" name="ad_tipo_contacto" value="cartas"> Cartas</label>
+                  </div>
+                </div>
+                <div class="ffield s2"><label>Observaciones sobre el v&iacute;nculo</label><textarea id="ad_obs_vinculo" placeholder="Calidad del v&iacute;nculo, frecuencia, impacto emocional..."></textarea></div>
+              </div>
+            </div>
+            <div class="panel-nav">
+              <button class="btn btn-outline" onclick="goStep(0)">&larr; Anterior</button>
+              <button class="btn btn-primary" onclick="goStep(2)">Siguiente &rarr;</button>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 2: MOTIVO DE CONSULTA -->
+          <div class="panel-section" id="sec-2">
+            <div class="fcard">
+              <div class="fcard-title">Consulta y derivaci&oacute;n</div>
+              <div class="fgrid g1">
+                <div class="ffield"><label>Motivo de consulta (en palabras del adulto o del/la NNA)</label>
+                  <textarea id="mc_motivo" style="min-height:90px" placeholder="Transcribir textualmente el motivo expresado..."></textarea>
+                </div>
+                <div class="ffield"><label>V&iacute;a de ingreso</label>
+                  <div class="radio-grp">
+                    <label><input type="radio" name="mc_via" value="espontanea"> Demanda espont&aacute;nea</label>
+                    <label><input type="radio" name="mc_via" value="derivacion"> Derivaci&oacute;n interna</label>
+                    <label><input type="radio" name="mc_via" value="externa"> Derivaci&oacute;n externa</label>
+                    <label><input type="radio" name="mc_via" value="judicial"> Indicaci&oacute;n judicial</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">&Aacute;reas de impacto identificadas</div>
+              <div class="ffield">
+                <div class="check-grp">
+                  <label><input type="checkbox" name="mc_area" value="conducta"> Conducta / Comportamiento</label>
+                  <label><input type="checkbox" name="mc_area" value="escolar"> Rendimiento escolar</label>
+                  <label><input type="checkbox" name="mc_area" value="emocional"> Estado emocional</label>
+                  <label><input type="checkbox" name="mc_area" value="pares"> V&iacute;nculo con pares</label>
+                  <label><input type="checkbox" name="mc_area" value="adultos"> V&iacute;nculo con adultos</label>
+                  <label><input type="checkbox" name="mc_area" value="duelo"> Duelo por separaci&oacute;n</label>
+                  <label><input type="checkbox" name="mc_area" value="ansiedad"> Ansiedad / Temor</label>
+                  <label><input type="checkbox" name="mc_area" value="tristeza"> Tristeza / Depresi&oacute;n</label>
+                  <label><input type="checkbox" name="mc_area" value="agresividad"> Agresividad</label>
+                  <label><input type="checkbox" name="mc_area" value="consumo"> Consumo de sustancias</label>
+                  <label><input type="checkbox" name="mc_area" value="desercion"> Riesgo deserci&oacute;n escolar</label>
+                  <label><input type="checkbox" name="mc_area" value="otro"> Otro</label>
+                </div>
+              </div>
+              <div class="fgrid g1" style="margin-top:14px">
+                <div class="ffield"><label>Tiempo de evoluci&oacute;n</label><input type="text" id="mc_evolucion" placeholder="Ej: 6 meses, desde la detenci&oacute;n del padre..."></div>
+                <div class="ffield"><label>Intentos previos de intervenci&oacute;n</label><textarea id="mc_previos" placeholder="Atenci&oacute;n psicol&oacute;gica previa, resultados..."></textarea></div>
+              </div>
+            </div>
+            <div class="panel-nav">
+              <button class="btn btn-outline" onclick="goStep(1)">&larr; Anterior</button>
+              <button class="btn btn-primary" onclick="goStep(3)">Siguiente &rarr;</button>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 3: EVALUACIÓN -->
+          <div class="panel-section" id="sec-3">
+            <div class="fcard">
+              <div class="fcard-title">Antecedentes del desarrollo</div>
+              <div class="fgrid g2">
+                <div class="ffield"><label>Antecedentes del embarazo y parto</label><textarea id="ev_embarazo" placeholder="Aspectos relevantes del periodo perinatal..."></textarea></div>
+                <div class="ffield"><label>Desarrollo psicomotor</label><textarea id="ev_psicomotor" placeholder="Hitos: gateo, marcha, lenguaje..."></textarea></div>
+                <div class="ffield s2"><label>Antecedentes de salud relevantes</label><textarea id="ev_salud" placeholder="Diagn&oacute;sticos previos, hospitalizaciones, medicaci&oacute;n, TEA, TDAH..."></textarea></div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Historia familiar y social</div>
+              <div class="fgrid g2">
+                <div class="ffield"><label>Din&aacute;mica familiar previa a la reclusi&oacute;n</label><textarea id="ev_familia" placeholder="C&oacute;mo era la vida familiar antes de la detenci&oacute;n..."></textarea></div>
+                <div class="ffield"><label>Impacto percibido de la reclusi&oacute;n</label><textarea id="ev_impacto" placeholder="C&oacute;mo vivi&oacute; el/la NNA la detenci&oacute;n, si se le explic&oacute;..."></textarea></div>
+                <div class="ffield s2"><label>Factores de riesgo identificados</label><textarea id="ev_riesgos" placeholder="Pobreza, hacinamiento, violencia intrafamiliar, consumo en el entorno..."></textarea></div>
+                <div class="ffield s2"><label>Factores protectores identificados</label><textarea id="ev_protectores" placeholder="Red de apoyo, v&iacute;nculo con adulto responsable, habilidades del/la NNA..."></textarea></div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Impresi&oacute;n diagn&oacute;stica inicial</div>
+              <div class="fgrid g1">
+                <div class="ffield"><label>Descripci&oacute;n cl&iacute;nica del/la NNA (primera sesi&oacute;n)</label>
+                  <textarea id="ev_descripcion" style="min-height:110px" placeholder="Presentaci&oacute;n, estado de &aacute;nimo, forma de relacionarse, recursos observados..."></textarea>
+                </div>
+                <div class="ffield"><label>Hip&oacute;tesis diagn&oacute;stica (CIE-11 / DSM-5, si aplica)</label>
+                  <input type="text" id="ev_diagnostico" placeholder="Ej: F43.1 Trastorno de adaptaci&oacute;n con &aacute;nimo depresivo...">
+                </div>
+              </div>
+            </div>
+            <div class="panel-nav">
+              <button class="btn btn-outline" onclick="goStep(2)">&larr; Anterior</button>
+              <button class="btn btn-primary" onclick="goStep(4)">Siguiente &rarr;</button>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 4: PLAN -->
+          <div class="panel-section" id="sec-4">
+            <div class="fcard">
+              <div class="fcard-title">Dise&ntilde;o del plan de intervenci&oacute;n</div>
+              <div class="fgrid g2">
+                <div class="ffield"><label>Objetivo general</label><textarea id="plan_obj_general" placeholder="Descripci&oacute;n del objetivo terapéutico principal..."></textarea></div>
+                <div class="ffield"><label>Modalidad de intervenci&oacute;n</label>
+                  <div class="check-grp" style="flex-direction:column;gap:6px;">
+                    <label><input type="checkbox" name="plan_modalidad" value="individual"> Psicoterapia individual</label>
+                    <label><input type="checkbox" name="plan_modalidad" value="adulto"> Trabajo con adulto responsable</label>
+                    <label><input type="checkbox" name="plan_modalidad" value="grupal"> Intervenci&oacute;n grupal</label>
+                    <label><input type="checkbox" name="plan_modalidad" value="escuela"> Coordinaci&oacute;n con escuela</label>
+                    <label><input type="checkbox" name="plan_modalidad" value="familiar"> Orientaci&oacute;n familiar</label>
+                  </div>
+                </div>
+                <div class="ffield"><label>Frecuencia de sesiones</label>
+                  <select id="plan_frecuencia">
+                    <option value="">Seleccionar...</option>
+                    <option>Semanal</option><option>Quincenal</option><option>Mensual</option><option>A demanda</option>
+                  </select>
+                </div>
+                <div class="ffield"><label>Duraci&oacute;n estimada</label><input type="text" id="plan_duracion" placeholder="Ej: 4 meses, 12 sesiones..."></div>
+              </div>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Objetivos espec&iacute;ficos</div>
+              <div id="objEspecificosContainer">
+                <div class="ffield" style="margin-bottom:10px"><label>Objetivo 1</label><input type="text" placeholder="Describir objetivo medible y observable..."></div>
+                <div class="ffield" style="margin-bottom:10px"><label>Objetivo 2</label><input type="text" placeholder="Describir objetivo medible y observable..."></div>
+                <div class="ffield" style="margin-bottom:10px"><label>Objetivo 3</label><input type="text" placeholder="Describir objetivo medible y observable..."></div>
+              </div>
+              <button class="btn-add-session" onclick="addObjetivo()" style="margin-top:4px;">&#65291; Agregar objetivo</button>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Criterios de alta / egreso</div>
+              <div class="ffield"><label>Indicadores de logro para el egreso</label><textarea id="plan_alta" placeholder="Cu&aacute;ndo se considerar&aacute; concluido el proceso..."></textarea></div>
+            </div>
+            <div class="panel-nav">
+              <button class="btn btn-outline" onclick="goStep(3)">&larr; Anterior</button>
+              <button class="btn btn-primary" onclick="goStep(5)">Siguiente &rarr;</button>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 5: SESIONES -->
+          <div class="panel-section" id="sec-5">
+            <div class="fcard">
+              <div class="fcard-title">Registro de sesiones</div>
+              <div id="sessionsContainer"></div>
+              <button class="btn-add-session" onclick="addSession()">&#65291; Agregar sesi&oacute;n</button>
+            </div>
+            <div class="fcard">
+              <div class="fcard-title">Estado del proceso</div>
+              <div class="fgrid g2">
+                <div class="ffield"><label>Estado actual</label>
+                  <select id="proceso_estado">
+                    <option value="activa">En proceso</option>
+                    <option value="pausa">En pausa</option>
+                    <option value="alta">Alta / egreso planificado</option>
+                    <option value="alta_no">Alta / egreso no planificado</option>
+                    <option value="derivacion">Derivaci&oacute;n a otro servicio</option>
+                  </select>
+                </div>
+                <div class="ffield"><label>Fecha de cierre (si aplica)</label><input type="date" id="proceso_fecha_cierre"></div>
+                <div class="ffield s2"><label>S&iacute;ntesis del proceso y evaluaci&oacute;n de resultados</label><textarea id="proceso_sintesis" style="min-height:90px" placeholder="Resumen del proceso, logros alcanzados, &aacute;reas pendientes..."></textarea></div>
+              </div>
+            </div>
+            <div class="panel-nav">
+              <button class="btn btn-outline" onclick="goStep(4)">&larr; Anterior</button>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-outline" onclick="window.print()">&#128424; Imprimir</button>
+                <button class="btn btn-save" onclick="saveFicha()">&#128190; Guardar ficha</button>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- SECCIÓN 6: DOCUMENTOS -->
+          <div class="panel-section" id="sec-6">
+            <div class="fcard">
+              <div class="fcard-title">Documentos adjuntos</div>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Adjunta informes, derivaciones, evaluaciones u otros documentos. Máximo 5 MB por archivo.</p>
+              <div class="adj-zona" onclick="document.getElementById('adjInput').click()">
+                <div style="font-size:32px">&#128206;</div>
+                <p><strong>Haz clic para adjuntar</strong> un archivo</p>
+                <p>PDF, Word, imágenes</p>
+              </div>
+              <input type="file" id="adjInput" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt" multiple style="display:none" onchange="handleAdj(this.files)">
+              <div id="adjListContainer"></div>
+            </div>
+            <div class="panel-nav">
+              <button class="btn btn-outline" onclick="goStep(5)">&larr; Anterior</button>
+              <button class="btn btn-save" onclick="saveFicha()">&#128190; Guardar ficha</button>
+            </div>
+          </div>
+
+        </div><!-- modal-body -->
+      </div><!-- modal-inner -->
+    </div><!-- fichaModal -->
+
+  </div><!-- container -->
+</div><!-- appScreen -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+var FIREBASE_CONFIG={
+  apiKey:"AIzaSyA0dQT5egfSedBcxdBU32z_M0d2cxiQ5SM",
+  authDomain:"panel-control-2026.firebaseapp.com",
+  databaseURL:"https://panel-control-2026-default-rtdb.firebaseio.com",
+  projectId:"panel-control-2026",
+  storageBucket:"panel-control-2026.firebasestorage.app",
+  messagingSenderId:"1001785626322",
+  appId:"1:1001785626322:web:24a859b412a9affe56670b"
+};
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script>
+var PASS = 'Rupa893';
+var db = null;
+var fichas = [];
+var currentFichaId = null;
+var currentStep = 0;
+var sessionCount = 0;
+var objCount = 3;
+var saveTimer = null;
+
+var adjuntos = [];
+
+function handleAdj(files){
+  var MAX=5*1024*1024;
+  Array.from(files).forEach(function(file){
+    if(file.size>MAX){showToast('Archivo muy grande (máx 5 MB)',false);return;}
+    var reader=new FileReader();
+    reader.onload=function(e){
+      adjuntos.push({id:'a'+Date.now(),name:file.name,size:file.size,type:file.type,dataUrl:e.target.result,fecha:new Date().toLocaleDateString('es-CL')});
+      renderAdjList();
+      showToast('✓ '+file.name+' adjuntado',true);
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('adjInput').value='';
+}
+function renderAdjList(){
+  var cont=document.getElementById('adjListContainer');
+  if(!cont)return;
+  if(!adjuntos.length){cont.innerHTML='<p style="font-size:12px;color:var(--muted);text-align:center;padding:10px">Sin documentos adjuntos.</p>';return;}
+  cont.innerHTML=adjuntos.map(function(a){
+    var icon=a.name&&a.name.toLowerCase().endsWith('.pdf')?'&#128197;':a.type&&a.type.startsWith('image')?'&#128444;':'&#128196;';
+    var sz=a.size>1048576?(a.size/1048576).toFixed(1)+' MB':Math.round(a.size/1024)+' KB';
+    return '<div class="adj-item"><div class="adj-info"><span class="adj-icon">'+icon+'</span><div style="min-width:0"><div class="adj-nombre">'+escH(a.name)+'</div><div class="adj-meta">'+sz+' &middot; '+escH(a.fecha)+'</div></div></div><div class="adj-btns"><button class="adj-btn" onclick="descargarAdj(''+a.id+'')">&#8595; Descargar</button><button class="adj-btn del" onclick="eliminarAdj(''+a.id+'')">&#10005;</button></div></div>';
+  }).join('');
+}
+function descargarAdj(id){
+  var a=adjuntos.find(function(x){return x.id===id;});if(!a)return;
+  var lnk=document.createElement('a');lnk.href=a.dataUrl;lnk.download=a.name;lnk.click();
+}
+function eliminarAdj(id){
+  if(!confirm('¿Eliminar este documento?'))return;
+  adjuntos=adjuntos.filter(function(x){return x.id!==id;});renderAdjList();
+}
+
+// LOGIN
+function doLogin(){
+  var val = document.getElementById('pwInput').value;
+  if(val === PASS){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    initFirebase();
+  } else {
+    document.getElementById('loginError').textContent = 'Contrase\u00f1a incorrecta. Intenta de nuevo.';
+    document.getElementById('pwInput').value='';
+    document.getElementById('pwInput').focus();
+  }
+}
+function doLogout(){
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('pwInput').value='';
+  document.getElementById('loginError').textContent='';
+}
+
+// FIREBASE
+function initFirebase(){
+  try {
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    db.ref('fichas').on('value', function(snap){
+      var d = snap.val();
+      fichas = d ? Object.values(d) : [];
+      setSync('Conectado','saved');
+      renderList();
+    });
+  } catch(e){
+    setSync('Error de conexi\u00f3n','error');
+  }
+}
+function setSync(msg,cls){
+  var el=document.getElementById('syncStatus');
+  el.textContent=msg; el.className=cls||'';
+}
+function scheduleSave_f(ficha){
+  clearTimeout(saveTimer);
+  setSync('Guardando...','saving');
+  saveTimer=setTimeout(function(){
+    if(!db){ setSync('Sin conexi\u00f3n','error'); return; }
+    db.ref('fichas/'+ficha.id).set(ficha)
+      .then(function(){ setSync('\u2713 Guardado \u00b7 '+new Date().toLocaleTimeString('es-CL'),'saved'); })
+      .catch(function(){ setSync('Error al guardar','error'); });
+  },800);
+}
+
+// LISTA
+function renderList(){
+  var q = (document.getElementById('searchInput').value||'').toLowerCase();
+  var est = document.getElementById('estadoFilter').value;
+  var filtered = fichas.filter(function(f){
+    var name = ((f.nna_nombres||'')+' '+(f.nna_ap||'')+' '+(f.nna_am||'')).toLowerCase();
+    var matchQ = !q || name.indexOf(q)>=0;
+    var matchE = !est || (f.proceso_estado||'activa')===est;
+    return matchQ && matchE;
+  });
+  var cont = document.getElementById('fichaListContainer');
+  if(!filtered.length){
+    cont.innerHTML = '<div class="empty-state"><div style="font-size:40px">&#128196;</div><p>No hay fichas cl\u00ednicas a\u00fan.<br>Crea la primera con el bot\u00f3n de arriba.</p></div>';
+    return;
+  }
+  cont.innerHTML = filtered.slice().reverse().map(function(f){
+    var nombre = ((f.nna_nombres||'')+ ' '+(f.nna_ap||'')).trim()||'Sin nombre';
+    var estado = f.proceso_estado||'activa';
+    var estadoLabels = {activa:'En proceso',alta:'Alta / Egreso','alta_no':'Alta no planif.',pausa:'En pausa',derivacion:'Derivado'};
+    var estadoClasses = {activa:'estado-activa',alta:'estado-alta','alta_no':'estado-alta',pausa:'estado-pausa',derivacion:'estado-pausa'};
+    var programas = (f.nna_programas||[]).join(', ')||'\u2014';
+    return '<div class="ficha-card" onclick="openFicha(\''+f.id+'\')">'
+      +'<div class="ficha-card-top">'
+      +'<div class="ficha-card-name">'+escH(nombre)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+      +'<span class="estado-pill '+(estadoClasses[estado]||'estado-activa')+'">'+escH(estadoLabels[estado]||estado)+'</span>'
+      +'<span class="ficha-card-id">'+escH(f.id)+'</span>'
+      +'</div></div>'
+      +'<div class="ficha-card-meta">'
+      +'<span>&#128100; '+(f.ad_vinculo?escH(f.ad_vinculo):'Sin adulto registrado')+'</span>'
+      +'<span>&#128218; '+escH(programas)+'</span>'
+      +'<span>&#128197; Apertura: '+escH(f.fecha_apertura||'\u2014')+'</span>'
+      +'</div></div>';
+  }).join('');
+}
+
+// MODAL
+function openNewFicha(){
+  currentFichaId = null;
+  var today = new Date();
+  var month = String(today.getMonth()+1).padStart(2,'0');
+  var day = String(today.getDate()).padStart(2,'0');
+  var rand = Math.floor(Math.random()*900)+100;
+  var newId = 'RUPA-'+today.getFullYear()+'-'+month+day+'-'+rand;
+  document.getElementById('fichaIdDisplay').textContent = newId;
+  document.getElementById('fichaFechaDisplay').textContent = today.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('modalTitle').textContent = 'Nueva Ficha Cl\u00ednica';
+  clearForm();
+  initSessions();
+  goStep(0);
+  document.getElementById('fichaModal').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function openFicha(id){
+  var f = fichas.find(function(x){return x.id===id;});
+  if(!f) return;
+  currentFichaId = id;
+  document.getElementById('fichaIdDisplay').textContent = f.id;
+  document.getElementById('fichaFechaDisplay').textContent = f.fecha_apertura||'\u2014';
+  document.getElementById('modalTitle').textContent = escH(((f.nna_nombres||'')+' '+(f.nna_ap||'')).trim()||'Ficha Cl\u00ednica');
+  loadForm(f);
+  goStep(0);
+  document.getElementById('fichaModal').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('fichaModal').style.display='none';
+  document.body.style.overflow='';
+  currentFichaId=null;
+}
+
+// STEPPER
+function goStep(n){
+  currentStep=n;
+  var steps=document.querySelectorAll('.step-item');
+  var secs=document.querySelectorAll('.panel-section');
+  steps.forEach(function(s,i){
+    s.className='step-item'+(i===n?' step-active':i<n?' step-done':'');
+  });
+  secs.forEach(function(s,i){ s.className='panel-section'+(i===n?' active':''); });
+  document.querySelector('.modal-inner').scrollTop=0;
+}
+
+// SESSIONS
+function initSessions(){
+  sessionCount=0;
+  document.getElementById('sessionsContainer').innerHTML='';
+  addSession();
+}
+function addSession(){
+  sessionCount++;
+  var n=sessionCount;
+  var cont=document.getElementById('sessionsContainer');
+  var div=document.createElement('div');
+  div.className='session-entry open';
+  div.id='session-'+n;
+  div.innerHTML='<div class="session-hdr" onclick="toggleSess('+n+')">'
+    +'<span class="session-hdr-left">Sesi\u00f3n '+n+'</span>'
+    +'<span class="session-hdr-date" id="sess-date-label-'+n+'">Fecha por registrar</span>'
+    +'<span class="session-toggle" id="sess-toggle-'+n+'">&#9662;</span>'
+    +'</div>'
+    +'<div class="session-body">'
+    +'<div class="fgrid g3">'
+    +'<div class="ffield"><label>Fecha</label><input type="date" id="sess-fecha-'+n+'" onchange="updateSessDate('+n+',this.value)"></div>'
+    +'<div class="ffield"><label>Duraci\u00f3n</label><select id="sess-dur-'+n+'"><option>45 min</option><option>50 min</option><option selected>60 min</option><option>90 min</option></select></div>'
+    +'<div class="ffield"><label>Asistencia</label><div class="radio-grp"><label><input type="radio" name="sess-asist-'+n+'" value="presente"> Presente</label><label><input type="radio" name="sess-asist-'+n+'" value="ausente"> Ausente</label><label><input type="radio" name="sess-asist-'+n+'" value="reagendo"> Reagend\u00f3</label></div></div>'
+    +'<div class="ffield s3"><label>Contenido de la sesi\u00f3n</label><textarea id="sess-contenido-'+n+'" style="min-height:90px" placeholder="Descripci\u00f3n de lo trabajado, actitud del/la NNA, t\u00e9cnicas..."></textarea></div>'
+    +'<div class="ffield s3"><label>Observaciones cl\u00ednicas / evoluci\u00f3n</label><textarea id="sess-obs-'+n+'" placeholder="Cambios observados, hip\u00f3tesis actualizadas, recursos emergentes..."></textarea></div>'
+    +'<div class="ffield s3"><label>Acuerdos / tarea pr\u00f3xima sesi\u00f3n</label><textarea id="sess-acuerdos-'+n+'" placeholder="\u00bfQu\u00e9 queda pendiente o fue acordado?"></textarea></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:flex-end;margin-top:10px">'
+    +'<button class="btn btn-del" onclick="removeSess('+n+')">Eliminar sesi\u00f3n</button>'
+    +'</div>'
+    +'</div>';
+  cont.appendChild(div);
+}
+function toggleSess(n){
+  var el=document.getElementById('session-'+n);
+  if(!el) return;
+  el.classList.toggle('open');
+}
+function updateSessDate(n,val){
+  if(!val) return;
+  var d=new Date(val+'T12:00:00');
+  var lbl=document.getElementById('sess-date-label-'+n);
+  if(lbl) lbl.textContent=d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
+}
+function removeSess(n){
+  var el=document.getElementById('session-'+n);
+  if(el) el.remove();
+  showToast('Sesi\u00f3n eliminada',false);
+}
+
+// OBJECTIVES
+function addObjetivo(){
+  objCount++;
+  var cont=document.getElementById('objEspecificosContainer');
+  var div=document.createElement('div');
+  div.className='ffield';
+  div.style.marginBottom='10px';
+  div.innerHTML='<label>Objetivo '+objCount+'</label><input type="text" placeholder="Describir objetivo medible y observable...">';
+  cont.appendChild(div);
+}
+
+// FORM HELPERS
+function gv(id){ var el=document.getElementById(id); return el?el.value:''; }
+function sv(id,val){ var el=document.getElementById(id); if(el) el.value=val||''; }
+function getRadio(name){ var el=document.querySelector('input[name="'+name+'"]:checked'); return el?el.value:''; }
+function setRadio(name,val){ if(!val) return; var el=document.querySelector('input[name="'+name+'"][value="'+val+'"]'); if(el) el.checked=true; }
+function getChecks(name){ return Array.from(document.querySelectorAll('input[name="'+name+'"]:checked')).map(function(e){return e.value;}); }
+function setChecks(name,vals){ if(!vals||!vals.length) return; document.querySelectorAll('input[name="'+name+'"]').forEach(function(e){ e.checked=vals.indexOf(e.value)>=0; }); }
+
+function collectSessions(){
+  var sessions=[];
+  for(var i=1;i<=sessionCount;i++){
+    var el=document.getElementById('session-'+i);
+    if(!el) continue;
+    sessions.push({
+      num:i,
+      fecha:gv('sess-fecha-'+i),
+      duracion:gv('sess-dur-'+i),
+      asistencia:getRadio('sess-asist-'+i),
+      contenido:gv('sess-contenido-'+i),
+      obs:gv('sess-obs-'+i),
+      acuerdos:gv('sess-acuerdos-'+i)
+    });
+  }
+  return sessions;
+}
+
+function collectObjetivos(){
+  var inputs=document.querySelectorAll('#objEspecificosContainer input[type=text]');
+  return Array.from(inputs).map(function(inp){return inp.value.trim();}).filter(Boolean);
+}
+
+function collectForm(){
+  var idDisp=document.getElementById('fichaIdDisplay').textContent;
+  var fechaDisp=document.getElementById('fichaFechaDisplay').textContent;
+  return {
+    id: currentFichaId||idDisp,
+    fecha_apertura: fechaDisp,
+    nna_nombres:gv('nna_nombres'), nna_ap:gv('nna_ap'), nna_am:gv('nna_am'),
+    nna_run:gv('nna_run'), nna_fec_nac:gv('nna_fec_nac'),
+    nna_sexo:getRadio('nna_sexo'), nna_nac:gv('nna_nac'),
+    nna_escolar:getRadio('nna_escolar'), nna_colegio:gv('nna_colegio'),
+    nna_nivel:gv('nna_nivel'), nna_obs_escolar:gv('nna_obs_escolar'),
+    nna_adulto_cargo:gv('nna_adulto_cargo'), nna_telefono:gv('nna_telefono'),
+    nna_direccion:gv('nna_direccion'), nna_familia:gv('nna_familia'),
+    nna_programas:getChecks('nna_prog'),
+    nna_fecha_ingreso:gv('nna_fecha_ingreso'), nna_fecha_inicio_atencion:gv('nna_fecha_inicio_atencion'), nna_derivador:gv('nna_derivador'),
+    adjuntos: adjuntos.slice(),
+    nna_inst_deriva:gv('nna_inst_deriva'),
+    ad_nombres:gv('ad_nombres'), ad_ap:gv('ad_ap'), ad_am:gv('ad_am'),
+    ad_run:gv('ad_run'), ad_vinculo:gv('ad_vinculo'), ad_edad:gv('ad_edad'),
+    ad_recinto:gv('ad_recinto'), ad_region:gv('ad_region'),
+    ad_procesal:getRadio('ad_procesal'), ad_tiempo:gv('ad_tiempo'),
+    ad_contacto:getRadio('ad_contacto'), ad_tipo_contacto:getChecks('ad_tipo_contacto'),
+    ad_obs_vinculo:gv('ad_obs_vinculo'),
+    mc_motivo:gv('mc_motivo'), mc_via:getRadio('mc_via'),
+    mc_areas:getChecks('mc_area'),
+    mc_evolucion:gv('mc_evolucion'), mc_previos:gv('mc_previos'),
+    ev_embarazo:gv('ev_embarazo'), ev_psicomotor:gv('ev_psicomotor'),
+    ev_salud:gv('ev_salud'), ev_familia:gv('ev_familia'),
+    ev_impacto:gv('ev_impacto'), ev_riesgos:gv('ev_riesgos'),
+    ev_protectores:gv('ev_protectores'), ev_descripcion:gv('ev_descripcion'),
+    ev_diagnostico:gv('ev_diagnostico'),
+    plan_obj_general:gv('plan_obj_general'),
+    plan_modalidad:getChecks('plan_modalidad'),
+    plan_frecuencia:gv('plan_frecuencia'), plan_duracion:gv('plan_duracion'),
+    plan_objetivos:collectObjetivos(), plan_alta:gv('plan_alta'),
+    sesiones:collectSessions(),
+    proceso_estado:gv('proceso_estado'),
+    proceso_fecha_cierre:gv('proceso_fecha_cierre'),
+    proceso_sintesis:gv('proceso_sintesis'),
+    updated_at: new Date().toISOString()
+  };
+}
+
+function clearForm(){
+  adjuntos=[];
+  renderAdjList();
+  var ids=['nna_nombres','nna_ap','nna_am','nna_run','nna_fec_nac','nna_nac','nna_colegio','nna_nivel','nna_obs_escolar','nna_adulto_cargo','nna_telefono','nna_direccion','nna_familia','nna_fecha_ingreso','nna_fecha_inicio_atencion','nna_derivador','nna_inst_deriva','ad_nombres','ad_ap','ad_am','ad_run','ad_vinculo','ad_edad','ad_recinto','ad_region','ad_tiempo','ad_obs_vinculo','mc_motivo','mc_evolucion','mc_previos','ev_embarazo','ev_psicomotor','ev_salud','ev_familia','ev_impacto','ev_riesgos','ev_protectores','ev_descripcion','ev_diagnostico','plan_obj_general','plan_frecuencia','plan_duracion','plan_alta','proceso_fecha_cierre','proceso_sintesis'];
+  ids.forEach(function(id){ sv(id,''); });
+  ['nna_sexo','nna_escolar','mc_via','ad_procesal','ad_contacto'].forEach(function(n){ var el=document.querySelector('input[name="'+n+'"]:checked'); if(el) el.checked=false; });
+  ['nna_prog','mc_area','plan_modalidad','ad_tipo_contacto'].forEach(function(n){ document.querySelectorAll('input[name="'+n+'"]').forEach(function(e){e.checked=false;}); });
+  sv('proceso_estado','activa');
+  objCount=3;
+  var oc=document.getElementById('objEspecificosContainer');
+  if(oc) oc.innerHTML='<div class="ffield" style="margin-bottom:10px"><label>Objetivo 1</label><input type="text" placeholder="Describir objetivo medible y observable..."></div><div class="ffield" style="margin-bottom:10px"><label>Objetivo 2</label><input type="text" placeholder="Describir objetivo medible y observable..."></div><div class="ffield" style="margin-bottom:10px"><label>Objetivo 3</label><input type="text" placeholder="Describir objetivo medible y observable..."></div>';
+}
+
+function loadForm(f){
+  clearForm();
+  sv('nna_nombres',f.nna_nombres); sv('nna_ap',f.nna_ap); sv('nna_am',f.nna_am);
+  sv('nna_run',f.nna_run); sv('nna_fec_nac',f.nna_fec_nac);
+  setRadio('nna_sexo',f.nna_sexo); sv('nna_nac',f.nna_nac);
+  setRadio('nna_escolar',f.nna_escolar); sv('nna_colegio',f.nna_colegio);
+  sv('nna_nivel',f.nna_nivel); sv('nna_obs_escolar',f.nna_obs_escolar);
+  sv('nna_adulto_cargo',f.nna_adulto_cargo); sv('nna_telefono',f.nna_telefono);
+  sv('nna_direccion',f.nna_direccion); sv('nna_familia',f.nna_familia);
+  setChecks('nna_prog',f.nna_programas||[]);
+  sv('nna_fecha_ingreso',f.nna_fecha_ingreso); sv('nna_fecha_inicio_atencion',f.nna_fecha_inicio_atencion||''); sv('nna_derivador',f.nna_derivador);
+  adjuntos=(f.adjuntos||[]).slice(); renderAdjList();
+  sv('nna_inst_deriva',f.nna_inst_deriva);
+  sv('ad_nombres',f.ad_nombres); sv('ad_ap',f.ad_ap); sv('ad_am',f.ad_am);
+  sv('ad_run',f.ad_run); sv('ad_vinculo',f.ad_vinculo); sv('ad_edad',f.ad_edad);
+  sv('ad_recinto',f.ad_recinto); sv('ad_region',f.ad_region);
+  setRadio('ad_procesal',f.ad_procesal); sv('ad_tiempo',f.ad_tiempo);
+  setRadio('ad_contacto',f.ad_contacto); setChecks('ad_tipo_contacto',f.ad_tipo_contacto||[]);
+  sv('ad_obs_vinculo',f.ad_obs_vinculo);
+  sv('mc_motivo',f.mc_motivo); setRadio('mc_via',f.mc_via);
+  setChecks('mc_area',f.mc_areas||[]);
+  sv('mc_evolucion',f.mc_evolucion); sv('mc_previos',f.mc_previos);
+  sv('ev_embarazo',f.ev_embarazo); sv('ev_psicomotor',f.ev_psicomotor);
+  sv('ev_salud',f.ev_salud); sv('ev_familia',f.ev_familia);
+  sv('ev_impacto',f.ev_impacto); sv('ev_riesgos',f.ev_riesgos);
+  sv('ev_protectores',f.ev_protectores); sv('ev_descripcion',f.ev_descripcion);
+  sv('ev_diagnostico',f.ev_diagnostico);
+  sv('plan_obj_general',f.plan_obj_general);
+  setChecks('plan_modalidad',f.plan_modalidad||[]);
+  sv('plan_frecuencia',f.plan_frecuencia); sv('plan_duracion',f.plan_duracion);
+  sv('plan_alta',f.plan_alta);
+  if(f.plan_objetivos&&f.plan_objetivos.length){
+    var oc=document.getElementById('objEspecificosContainer');
+    oc.innerHTML=''; objCount=0;
+    f.plan_objetivos.forEach(function(o,i){
+      objCount++;
+      var d=document.createElement('div'); d.className='ffield'; d.style.marginBottom='10px';
+      d.innerHTML='<label>Objetivo '+(i+1)+'</label><input type="text" value="'+escH(o)+'" placeholder="Describir objetivo...">';
+      oc.appendChild(d);
+    });
+  }
+  // Sessions
+  document.getElementById('sessionsContainer').innerHTML=''; sessionCount=0;
+  var sessions=f.sesiones||[];
+  if(!sessions.length){ addSession(); }
+  else {
+    sessions.forEach(function(s,i){
+      addSession();
+      sv('sess-fecha-'+(i+1),s.fecha);
+      if(s.fecha) updateSessDate(i+1,s.fecha);
+      sv('sess-dur-'+(i+1),s.duracion);
+      if(s.asistencia) setRadio('sess-asist-'+(i+1),s.asistencia);
+      sv('sess-contenido-'+(i+1),s.contenido);
+      sv('sess-obs-'+(i+1),s.obs);
+      sv('sess-acuerdos-'+(i+1),s.acuerdos);
+    });
+  }
+  sv('proceso_estado',f.proceso_estado||'activa');
+  sv('proceso_fecha_cierre',f.proceso_fecha_cierre);
+  sv('proceso_sintesis',f.proceso_sintesis);
+}
+
+function saveFicha(){
+  var ficha=collectForm();
+  if(!ficha.nna_nombres){ showToast('Ingresa al menos el nombre del NNA',false); return; }
+  if(!db){ showToast('Sin conexi\u00f3n a Firebase',false); return; }
+  if(!currentFichaId) currentFichaId=ficha.id;
+  scheduleSave_f(ficha);
+  showToast('\u2713 Ficha guardada correctamente',true);
+}
+
+// TOAST
+function showToast(msg,ok){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(ok?' ok':'');
+  setTimeout(function(){t.className='toast';},3000);
+}
+
+document.getElementById('pwInput').focus();
+</script>
+</body>
+</html>
